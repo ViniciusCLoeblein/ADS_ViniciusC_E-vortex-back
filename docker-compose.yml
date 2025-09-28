@@ -30,19 +30,6 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-  game:
-    image: game:1.0.0
-    command: ["bash", "./deploy.sh", "game"]
-    depends_on:
-      - gateway
-      - rabbitmq
-    networks:
-      - app-network
-    deploy:
-      mode: replicated
-      replicas: 1
-      restart_policy:
-        condition: on-failure
 
   rabbitmq:
     image: rabbitmq:4.1-rc-management

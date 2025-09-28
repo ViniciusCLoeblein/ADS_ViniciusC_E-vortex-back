@@ -1,0 +1,31 @@
+{
+    "terminal.integrated.autoReplies": {},
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    "terminal.integrated.shellIntegration.enabled": true,
+    "debug.disassemblyView.showSourceCode": false,
+    "eslint.format.enable": true,
+    "eslint.notebooks.rules.customizations": [],
+    "editor.insertSpaces": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    "eslint.codeActionsOnSave.rules": null,
+    "console-ninja.featureSet": "Community",
+    "editor.stickyScroll.enabled": false,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "explorer.confirmDelete": false,
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "eslint.validate": [
+      "javascript",
+      "typescript",
+    ],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "files.eol": "\r\n",
+    "[typescript]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+  }
+  

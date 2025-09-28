@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "SonarSource.sonarlint-vscode",
+      "eamodio.gitlens",
+      "ckolkman.vscode-postgres"
+    ]
+  }
+  

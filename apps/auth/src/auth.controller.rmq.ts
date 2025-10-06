@@ -1,13 +1,26 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { AuthTokenResponse, TestResponse } from './types/auth.types';
 
 @Controller()
 export class AuthControllerRMQ {
   constructor(private readonly authService: AuthService) {}
 
   @MessagePattern({ cmd: 'Auth.Teste' })
-  teste(): Promise<any> {
+  teste(): Promise<TestResponse> {
     return this.authService.teste();
+  }
+
+  @MessagePattern({ cmd: 'Auth.Register' })
+  register(payload: RegisterDto): Promise<AuthTokenResponse> {
+    return this.authService.register(payload);
+  }
+
+  @MessagePattern({ cmd: 'Auth.Login' })
+  login(payload: LoginDto): Promise<AuthTokenResponse> {
+    return this.authService.login(payload);
   }
 }

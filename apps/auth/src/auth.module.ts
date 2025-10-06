@@ -8,6 +8,7 @@ import { AuthRepository } from './auth.repository';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from 'apps/generics/guards/jwt-auth.guard';
+import { UsuariosEntity } from 'apps/entities/usuarios.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { JwtAuthGuard } from 'apps/generics/guards/jwt-auth.guard';
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([]),
+    TypeOrmModule.forFeature([UsuariosEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async () => {

@@ -46,7 +46,7 @@ export class JwtAuthGuard implements CanActivate {
         algorithms: ['HS256'],
       });
 
-      request['user'] = await this.authRepository.findUserById(payload.sub);
+      //request['user'] = await this.authRepository.findUserById(payload.sub);
     } catch {
       throw new UnauthorizedException();
     }

@@ -26,7 +26,6 @@ export class AuthController {
     accessToken: string;
     accessTokenExpiresAt: string;
   }> {
-    console.log('aq', body);
     return this.authService.register(body);
   }
 

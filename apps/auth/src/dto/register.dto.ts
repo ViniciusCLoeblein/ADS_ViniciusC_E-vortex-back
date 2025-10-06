@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEmail,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Length,
@@ -11,20 +12,24 @@ import {
 
 export class RegisterDto {
   @ApiProperty({ description: 'Nome do usuário' })
+  @IsNotEmpty()
   @IsString()
   @Length(2, 100)
   nome: string;
 
   @ApiProperty({ description: 'Email do usuário' })
+  @IsNotEmpty()
   @IsEmail()
   email: string;
 
   @ApiProperty({ description: 'Senha do usuário' })
+  @IsNotEmpty()
   @IsString()
   @Length(6, 255)
   senha: string;
 
   @ApiProperty({ description: 'CPF do usuário' })
+  @IsNotEmpty()
   @IsString()
   @Matches(/^\d{11}$/)
   cpf: string;

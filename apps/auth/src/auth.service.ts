@@ -48,24 +48,19 @@ export class AuthService {
       tipo = 'usuario',
       telefone,
       dataNascimento,
-    } = payload || ({} as RegisterDto);
-    if (!nome || !email || !senha || !cpf) {
+      aceitaMarketing = false,
+    } = payload;
+    const [existingByEmail, existingByCpf] = await Promise.all([
+      this.authRepository.findUserByEmail(email),
+      this.authRepository.findUserByCpf(cpf),
+    ]);
+    if (existingByEmail || existingByCpf) {
       throw new BadRequestException(
-        'Campos obrigatórios: nome, email, senha, cpf',
+        existingByEmail ? 'Email já cadastrado' : 'CPF já cadastrado',
       );
     }
 
-    const existingByEmail = await this.authRepository.findUserByEmail(email);
-    if (existingByEmail) {
-      throw new BadRequestException('Email já cadastrado');
-    }
-    const existingByCpf = await this.authRepository.findUserByCpf(cpf);
-    if (existingByCpf) {
-      throw new BadRequestException('CPF já cadastrado');
-    }
-
     const senhaHash = await bcrypt.hash(senha, 10);
-
     const userToCreate: Partial<UsuariosEntity> = {
       uuid: randomUUID(),
       nome,
@@ -76,7 +71,7 @@ export class AuthService {
       telefone: telefone ?? null,
       avatarUrl: null,
       dataNascimento: dataNascimento ?? null,
-      aceitaMarketing: false,
+      aceitaMarketing,
       emailVerificado: false,
       ultimoLogin: null,
     };

@@ -1,11 +1,13 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseFilters } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthTokenResponse, TestResponse } from './types/auth.types';
+import { IExceptionFilter } from 'apps/generics/filters/IExceptionFilterGrpc';
 
 @Controller()
+@UseFilters(IExceptionFilter)
 export class AuthControllerRMQ {
   constructor(private readonly authService: AuthService) {}
 

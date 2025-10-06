@@ -1,28 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'apps/entities/user.entity';
+import { UsuariosEntity } from 'apps/entities/usuarios.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthRepository {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(UsuariosEntity)
+    private usuariosRepository: Repository<UsuariosEntity>,
   ) {}
 
   async teste(): Promise<any> {
     return { status: 'ok' };
   }
 
-  async createUser(data: Partial<User>) {
-    return await this.userRepo.save(data);
+  async findUserById(id: string): Promise<UsuariosEntity> {
+    return this.usuariosRepository.findOne({ where: { id } });
   }
 
-  async findUser(email: string) {
-    return await this.userRepo.findOneBy({ email });
+  async createUser(user: Partial<UsuariosEntity>): Promise<UsuariosEntity> {
+    return this.usuariosRepository.save(user);
   }
 
-  async findUserById(id: string) {
-    return await this.userRepo.findOneBy({ id });
+  async findUserByEmail(email: string): Promise<UsuariosEntity> {
+    return this.usuariosRepository.findOne({ where: { email } });
+  }
+
+  async findUserByCpf(cpf: string): Promise<UsuariosEntity> {
+    return this.usuariosRepository.findOne({ where: { cpf } });
   }
 }

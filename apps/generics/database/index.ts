@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { join } from 'path';
 
 @Injectable()
 export class PostgresDatabaseService {
+  private readonly logger: Logger;
   constructor(
     private serviceName: string,
     private configService: ConfigService,
@@ -13,17 +14,46 @@ export class PostgresDatabaseService {
   public getConnectionPostgres(): TypeOrmModuleOptions {
     return {
       type: 'postgres',
-      host: this.configService.get(`${this.serviceName}_DB_HOST`),
-      port:
-        parseInt(this.configService.get(`${this.serviceName}_DB_PORT`), 10) ||
-        5432,
-      username: this.configService.get(`${this.serviceName}_DB_USERNAME`),
-      password: this.configService.get(`${this.serviceName}_DB_PASSWORD`),
-      database: this.configService.get(`${this.serviceName}_DB_NAME`),
+      username: this.configService.get(`DATA_BASE_USER`),
+      password: this.configService.get(`DATA_BASE_PASSWORD`),
+      host: this.configService.get(`DATA_BASE_HOST`),
+      port: this.configService.get(`DATA_BASE_PORT`),
+      database: this.configService.get(`DATA_BASE_DB`),
       entities: [join(__dirname, '**', 'entities', '**', '*.entity.{ts,js}')],
-      synchronize: true, // Use `true` apenas em desenvolvimento, nunca em produção.
+      synchronize: true,
       autoLoadEntities: true,
       logging: true,
-    };
+      ssl: true,
+      extra: {
+        ssl: {
+          rejectUnauthorized: true,
+          ca: this.configService.get(`DATA_BASE_CA`)?.replace(/\\n/g, '\n'),
+        },
+        poolMax: 10,
+        poolMin: 3,
+        poolIncrement: 5,
+        poolTimeout: 5,
+        queueTimeout: 50000,
+        sessionCallback: (connection, requestedTag, callback) => {
+          connection
+            .execute(
+              `BEGIN DBMS_SESSION.SET_IDENTIFIER('${this.serviceName}'); END;`,
+            )
+            .then(() => {
+              this.logger.log(
+                `Session for ${this.serviceName} successfully started`,
+              );
+              callback();
+            })
+            .catch((err) => {
+              this.logger.error(
+                `Error setting session identifier for ${this.serviceName}: ${err.message}`,
+                err.stack,
+              );
+              callback(err);
+            });
+        },
+      },
+    } as TypeOrmModuleOptions;
   }
 }

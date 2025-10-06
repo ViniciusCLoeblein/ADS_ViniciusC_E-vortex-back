@@ -8,8 +8,6 @@ async function bootstrap() {
     logger: ['error', 'warn', 'verbose', 'debug', 'log'],
   });
 
-  app.setGlobalPrefix('api');
-
   const config = new DocumentBuilder()
     .setTitle('Trabalho faculdade Services')
     .setDescription('Trabalho - Acesso a todos os serviços fornecidos')
@@ -28,7 +26,7 @@ async function bootstrap() {
 
   app.enableCors();
   app.useGlobalFilters(new AllExceptionsFilter());
-  await app.listen(process.env.PORT);
+  await app.listen(3000);
 }
 
 bootstrap();

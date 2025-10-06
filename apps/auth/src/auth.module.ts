@@ -5,10 +5,10 @@ import { PostgresDatabaseService } from 'apps/generics/database';
 import { AuthControllerRMQ } from './auth.controller.rmq';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
-import { User } from 'apps/entities/user.entity';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from 'apps/generics/guards/jwt-auth.guard';
+import { UsuariosEntity } from 'apps/entities/usuarios.entity';
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { JwtAuthGuard } from 'apps/generics/guards/jwt-auth.guard';
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([UsuariosEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async () => {

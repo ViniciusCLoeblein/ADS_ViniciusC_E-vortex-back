@@ -1,10 +1,10 @@
 {
-  "name": "trabalho-facul",
-  "version": "0.0.1",
-  "description": "",
-  "author": "Vinicius do Carmo",
+  "name": "evortex",
+  "version": "1.0.0",
+  "description": "Trabalho de faculdade - Evortex",
+  "author": "ViniciusCLoeblein",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "scripts": {
     "start:all": "cd scripts && bash startAll.bat",
     "build": "nest build",

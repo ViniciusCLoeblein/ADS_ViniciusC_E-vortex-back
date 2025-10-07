@@ -5,9 +5,9 @@ networks:
 
 services:
   gateway:
-    image: gateway:1.0.1
+    image: gateway:1.0.0
     ports:
-      - 8080:8080
+      - 3000:3000
     command: ["bash", "./deploy.sh", "gateway"]
     networks:
       - app-network
@@ -50,19 +50,3 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-
-  postgres:
-    image: postgres:17.1-bullseye
-    environment:
-      POSTGRES_USER: vini
-      POSTGRES_PASSWORD: vini123
-      POSTGRES_DB: game
-    ports:
-      - 5432:5432
-    networks:
-      - app-network
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-volumes:
-  postgres-data:

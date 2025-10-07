@@ -21,8 +21,6 @@ services:
   
   auth:
     image: auth:1.0.0
-    ports:
-      - 3000:3000
     command: ["bash", "./deploy.sh", "auth"]
     networks:
       - app-network

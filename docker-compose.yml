@@ -17,22 +17,22 @@ services:
       restart_policy:
         condition: on-failure
 
-  rabbitmq:
-    image: rabbitmq:4.1-rc-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=12345
-      - RABBITMQ_ERLANG_COOKIE=cluster_cookie
-      - RABBITMQ_PROMETHEUS_RETENTION_PERIOD=5m
-      - CLUSTERED=true
-    ports:
-      - 5672:5672
-      - 15672:15672
-      - 15692:15692
-    networks:
-      - app-network
-    deploy:
-      mode: replicated
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+rabbitmq:
+  image: rabbitmq:3.12-management-alpine
+  environment:
+    RABBITMQ_DEFAULT_USER: admin
+    RABBITMQ_DEFAULT_PASS: 12345
+    RABBITMQ_ERLANG_COOKIE: cluster_cookie
+    RABBITMQ_PROMETHEUS_RETENTION_PERIOD: 5m
+    CLUSTERED: 'false'
+  ports:
+    - 5672:5672
+    - 15672:15672
+  networks:
+    - app-network
+  deploy:
+    mode: replicated
+    replicas: 1
+    restart_policy:
+      condition: on-failure
+

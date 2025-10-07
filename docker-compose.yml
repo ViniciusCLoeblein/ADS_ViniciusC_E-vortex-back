@@ -26,6 +26,7 @@ services:
       - app-network
     environment:
       HOST_RMQ: "rabbitmq"
+      AUTH_QUEUE: "auth"
     deploy:
       mode: replicated
       replicas: 1

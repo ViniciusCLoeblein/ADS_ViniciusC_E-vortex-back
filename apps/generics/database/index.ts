@@ -22,7 +22,7 @@ export class PostgresDatabaseService {
       entities: [join(__dirname, '**', 'entities', '**', '*.entity.{ts,js}')],
       synchronize: true,
       autoLoadEntities: true,
-      logging: true,
+      logging: false,
       ssl: true,
       extra: {
         ssl: {

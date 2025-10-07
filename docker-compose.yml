@@ -18,6 +18,21 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+  
+  auth:
+    image: auth:1.0.0
+    ports:
+      - 3000:3000
+    command: ["bash", "./deploy.sh", "auth"]
+    networks:
+      - app-network
+    environment:
+      HOST_RMQ: "rabbitmq"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine

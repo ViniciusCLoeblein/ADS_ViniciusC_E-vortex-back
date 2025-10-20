@@ -8,101 +8,92 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { Observable } from 'rxjs';
-import { Public } from 'apps/generics/decorators/public-decorator';
 import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
 import { AtualizarItemCarrinhoDto } from './dto/atualizar-item-carrinho.dto';
+import { UserRequest } from 'apps/generics/decorators/user-in-request.decorator';
+import { UsuariosEntity } from 'apps/entities/usuarios.entity';
+import {
+  CarrinhoRes,
+  FavoritosRes,
+  MessageRes,
+  ProdutoDetalheRes,
+  ProdutoListagemRes,
+} from './types/sales.types';
 
 @Controller('sales')
 @ApiTags('Sales')
+@ApiBearerAuth()
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
-  // Carrinho
   @ApiOperation({ summary: 'Obter carrinho' })
+  @ApiOkResponse({ type: CarrinhoRes })
   @Get('carrinho')
-  @Public()
-  obterCarrinho(
-    @Query('sessaoId') sessaoId?: string,
-    @Req() req?: any,
-  ): Observable<any> {
-    const usuarioId = req?.user?.sub;
-    return this.salesService.obterCarrinho({ usuarioId, sessaoId });
+  obterCarrinho(@UserRequest() user: UsuariosEntity): Observable<CarrinhoRes> {
+    return this.salesService.obterCarrinho(user);
   }
 
   @ApiOperation({ summary: 'Adicionar item ao carrinho' })
+  @ApiOkResponse({ type: CarrinhoRes })
   @Post('carrinho/itens')
-  @Public()
   @HttpCode(200)
   adicionarItemCarrinho(
     @Body() body: AdicionarItemCarrinhoDto,
-    @Req() req?: any,
-  ): Observable<any> {
-    const usuarioId = req?.user?.sub;
-    return this.salesService.adicionarItemCarrinho({
-      ...body,
-      usuarioId,
-    });
+    @UserRequest() user: UsuariosEntity,
+  ): Observable<CarrinhoRes> {
+    return this.salesService.adicionarItemCarrinho(user.id, body);
   }
 
   @ApiOperation({ summary: 'Atualizar item do carrinho' })
+  @ApiOkResponse({ type: CarrinhoRes })
   @Put('carrinho/itens/:itemId')
-  @Public()
   atualizarItemCarrinho(
     @Param('itemId') itemId: string,
     @Body() body: AtualizarItemCarrinhoDto,
-    @Req() req?: any,
-  ): Observable<any> {
-    const usuarioId = req?.user?.sub;
-    return this.salesService.atualizarItemCarrinho({
+    @UserRequest() user: UsuariosEntity,
+  ): Observable<CarrinhoRes> {
+    return this.salesService.atualizarItemCarrinho(
+      user.id,
       itemId,
-      quantidade: body.quantidade,
-      usuarioId,
-      sessaoId: body.sessaoId,
-    });
+      body.quantidade,
+    );
   }
 
   @ApiOperation({ summary: 'Remover item do carrinho' })
+  @ApiOkResponse({ type: CarrinhoRes })
   @Delete('carrinho/itens/:itemId')
-  @Public()
   removerItemCarrinho(
     @Param('itemId') itemId: string,
-    @Query('sessaoId') sessaoId?: string,
-    @Req() req?: any,
-  ): Observable<any> {
-    const usuarioId = req?.user?.sub;
-    return this.salesService.removerItemCarrinho({
-      itemId,
-      usuarioId,
-      sessaoId,
-    });
+    @UserRequest() user: UsuariosEntity,
+  ): Observable<CarrinhoRes> {
+    return this.salesService.removerItemCarrinho(user.id, itemId);
   }
 
   @ApiOperation({ summary: 'Limpar carrinho' })
+  @ApiOkResponse({ type: MessageRes })
   @Delete('carrinho')
-  @Public()
-  limparCarrinho(
-    @Query('sessaoId') sessaoId?: string,
-    @Req() req?: any,
-  ): Observable<any> {
-    const usuarioId = req?.user?.sub;
-    return this.salesService.limparCarrinho({ usuarioId, sessaoId });
+  limparCarrinho(@UserRequest() user: UsuariosEntity): Observable<MessageRes> {
+    return this.salesService.limparCarrinho(user.id);
   }
 
-  // Produtos
   @ApiOperation({ summary: 'Listar produtos' })
+  @ApiOkResponse({ type: ProdutoListagemRes })
   @Get('produtos')
-  @Public()
   listarProdutos(
     @Query('categoriaId') categoriaId?: string,
     @Query('busca') busca?: string,
     @Query('pagina') pagina?: number,
     @Query('limite') limite?: number,
-  ): Observable<any> {
+  ): Observable<ProdutoListagemRes> {
     return this.salesService.listarProdutos({
       categoriaId,
       busca,
@@ -112,38 +103,39 @@ export class SalesController {
   }
 
   @ApiOperation({ summary: 'Obter produto' })
+  @ApiOkResponse({ type: ProdutoDetalheRes })
   @Get('produtos/:id')
-  @Public()
-  obterProduto(@Param('id') id: string): Observable<any> {
+  obterProduto(@Param('id') id: string): Observable<ProdutoDetalheRes> {
     return this.salesService.obterProduto(id);
   }
 
-  // Favoritos
   @ApiOperation({ summary: 'Listar favoritos' })
+  @ApiOkResponse({ type: FavoritosRes })
   @Get('favoritos')
-  listarFavoritos(@Req() req: any): Observable<any> {
-    const usuarioId = req.user?.sub;
-    return this.salesService.listarFavoritos(usuarioId);
+  listarFavoritos(
+    @UserRequest() user: UsuariosEntity,
+  ): Observable<FavoritosRes> {
+    return this.salesService.listarFavoritos(user.id);
   }
 
   @ApiOperation({ summary: 'Adicionar produto aos favoritos' })
+  @ApiOkResponse({ type: MessageRes })
   @Post('favoritos/:produtoId')
   @HttpCode(200)
   adicionarFavorito(
     @Param('produtoId') produtoId: string,
-    @Req() req: any,
-  ): Observable<any> {
-    const usuarioId = req.user?.sub;
-    return this.salesService.adicionarFavorito({ usuarioId, produtoId });
+    @UserRequest() user: UsuariosEntity,
+  ): Observable<MessageRes> {
+    return this.salesService.adicionarFavorito(user.id, produtoId);
   }
 
   @ApiOperation({ summary: 'Remover produto dos favoritos' })
+  @ApiOkResponse({ type: MessageRes })
   @Delete('favoritos/:produtoId')
   removerFavorito(
     @Param('produtoId') produtoId: string,
-    @Req() req: any,
-  ): Observable<any> {
-    const usuarioId = req.user?.sub;
-    return this.salesService.removerFavorito({ usuarioId, produtoId });
+    @UserRequest() user: UsuariosEntity,
+  ): Observable<MessageRes> {
+    return this.salesService.removerFavorito(user.id, produtoId);
   }
 }

@@ -8,13 +8,6 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AdicionarItemCarrinhoDto {
-  @ApiPropertyOptional({
-    description: 'ID da sessão (para usuários não autenticados)',
-  })
-  @IsOptional()
-  @IsString()
-  sessaoId?: string;
-
   @ApiProperty({ description: 'ID do produto' })
   @IsNotEmpty()
   @IsString()

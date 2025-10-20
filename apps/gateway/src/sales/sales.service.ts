@@ -1,6 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientRMQ } from '@nestjs/microservices';
+import { UsuariosEntity } from 'apps/entities/usuarios.entity';
 import { Observable } from 'rxjs';
+import {
+  CarrinhoRes,
+  FavoritosRes,
+  MessageRes,
+  ProdutoDetalheRes,
+  ProdutoListagemRes,
+} from './types/sales.types';
 
 @Injectable()
 export class SalesService {
@@ -9,45 +17,50 @@ export class SalesService {
     private readonly clientRMQ: ClientRMQ,
   ) {}
 
-  obterCarrinho(payload: {
-    usuarioId?: string;
-    sessaoId?: string;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.ObterCarrinho' }, payload);
+  obterCarrinho(user: UsuariosEntity): Observable<CarrinhoRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.ObterCarrinho' },
+      { usuarioId: user.id },
+    );
   }
 
-  adicionarItemCarrinho(payload: {
-    usuarioId?: string;
-    sessaoId?: string;
-    produtoId: string;
-    variacaoId?: string;
-    quantidade: number;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.AdicionarItemCarrinho' }, payload);
+  adicionarItemCarrinho(
+    usuarioId: string,
+    payload: {
+      produtoId: string;
+      variacaoId?: string;
+      quantidade: number;
+    },
+  ): Observable<CarrinhoRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.AdicionarItemCarrinho' },
+      { ...payload, usuarioId },
+    );
   }
 
-  atualizarItemCarrinho(payload: {
-    usuarioId?: string;
-    sessaoId?: string;
-    itemId: string;
-    quantidade: number;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.AtualizarItemCarrinho' }, payload);
+  atualizarItemCarrinho(
+    usuarioId: string,
+    itemId: string,
+    quantidade: number,
+  ): Observable<CarrinhoRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.AtualizarItemCarrinho' },
+      { usuarioId, itemId, quantidade },
+    );
   }
 
-  removerItemCarrinho(payload: {
-    usuarioId?: string;
-    sessaoId?: string;
-    itemId: string;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.RemoverItemCarrinho' }, payload);
+  removerItemCarrinho(
+    usuarioId: string,
+    itemId: string,
+  ): Observable<CarrinhoRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.RemoverItemCarrinho' },
+      { usuarioId, itemId },
+    );
   }
 
-  limparCarrinho(payload: {
-    usuarioId?: string;
-    sessaoId?: string;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.LimparCarrinho' }, payload);
+  limparCarrinho(usuarioId: string): Observable<MessageRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.LimparCarrinho' }, { usuarioId });
   }
 
   listarProdutos(payload: {
@@ -55,29 +68,35 @@ export class SalesService {
     busca?: string;
     pagina?: number;
     limite?: number;
-  }): Observable<any> {
+  }): Observable<ProdutoListagemRes> {
     return this.clientRMQ.send({ cmd: 'Sales.ListarProdutos' }, payload);
   }
 
-  obterProduto(produtoId: string): Observable<any> {
+  obterProduto(produtoId: string): Observable<ProdutoDetalheRes> {
     return this.clientRMQ.send({ cmd: 'Sales.ObterProduto' }, { produtoId });
   }
 
-  adicionarFavorito(payload: {
-    usuarioId: string;
-    produtoId: string;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.AdicionarFavorito' }, payload);
+  adicionarFavorito(
+    usuarioId: string,
+    produtoId: string,
+  ): Observable<MessageRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.AdicionarFavorito' },
+      { usuarioId, produtoId },
+    );
   }
 
-  removerFavorito(payload: {
-    usuarioId: string;
-    produtoId: string;
-  }): Observable<any> {
-    return this.clientRMQ.send({ cmd: 'Sales.RemoverFavorito' }, payload);
+  removerFavorito(
+    usuarioId: string,
+    produtoId: string,
+  ): Observable<MessageRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.RemoverFavorito' },
+      { usuarioId, produtoId },
+    );
   }
 
-  listarFavoritos(usuarioId: string): Observable<any> {
+  listarFavoritos(usuarioId: string): Observable<FavoritosRes> {
     return this.clientRMQ.send({ cmd: 'Sales.ListarFavoritos' }, { usuarioId });
   }
 }

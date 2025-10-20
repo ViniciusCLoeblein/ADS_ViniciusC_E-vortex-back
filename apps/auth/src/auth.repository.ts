@@ -13,7 +13,7 @@ export class AuthRepository {
     private vendedoresRepository: Repository<VendedoresEntity>,
   ) {}
 
-  async teste(): Promise<any> {
+  async teste(): Promise<{ status: string }> {
     return { status: 'ok' };
   }
 

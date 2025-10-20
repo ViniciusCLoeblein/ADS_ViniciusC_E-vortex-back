@@ -13,6 +13,12 @@ import { VariacoesProdutoEntity } from 'apps/entities/variacoes_produto.entity';
 import { CategoriasEntity } from 'apps/entities/categorias.entity';
 import { StorageService } from 'apps/generics/storage/storage.service';
 import { MulterFile } from 'apps/generics/types/multer.types';
+import { CriarProdutoRmqDto } from './dto/criar-produto-rmq.dto';
+import { CriarCategoriaRmqDto } from './dto/criar-categoria-rmq.dto';
+import { AtualizarCategoriaRmqDto } from './dto/atualizar-categoria-rmq.dto';
+import { CriarVariacaoRmqDto } from './dto/criar-variacao-rmq.dto';
+import { AtualizarVariacaoRmqDto } from './dto/atualizar-variacao-rmq.dto';
+import { UploadImagemRmqDto } from './dto/upload-imagem-rmq.dto';
 
 @Injectable()
 export class SalesService {
@@ -379,25 +385,7 @@ export class SalesService {
     };
   }
 
-  async criarProduto(payload: {
-    usuarioId: string;
-    categoriaId: string;
-    sku: string;
-    nome: string;
-    descricao: string;
-    descricaoCurta: string;
-    preco: number;
-    precoPromocional?: number;
-    pesoKg: number;
-    alturaCm: number;
-    larguraCm: number;
-    profundidadeCm: number;
-    estoque: number;
-    estoqueMinimo: number;
-    tags?: string;
-    destaque?: boolean;
-    ativo?: boolean;
-  }) {
+  async criarProduto(payload: CriarProdutoRmqDto) {
     const {
       usuarioId,
       categoriaId,
@@ -453,15 +441,7 @@ export class SalesService {
     return produto;
   }
 
-  async criarCategoria(payload: {
-    nome: string;
-    descricao: string;
-    slug: string;
-    icone?: string;
-    corHex?: string;
-    ordem?: number;
-    categoriaPaiId?: string;
-  }) {
+  async criarCategoria(payload: CriarCategoriaRmqDto) {
     const { nome, descricao, slug, icone, corHex, ordem, categoriaPaiId } =
       payload;
 
@@ -501,17 +481,7 @@ export class SalesService {
     return categoria;
   }
 
-  async atualizarCategoria(payload: {
-    id: string;
-    nome?: string;
-    descricao?: string;
-    slug?: string;
-    icone?: string;
-    corHex?: string;
-    ordem?: number;
-    categoriaPaiId?: string;
-    ativo?: boolean;
-  }) {
+  async atualizarCategoria(payload: AtualizarCategoriaRmqDto) {
     const { id, slug, ...data } = payload;
 
     const categoria = await this.salesRepository.findCategoriaById(id);
@@ -555,15 +525,7 @@ export class SalesService {
   }
 
   // Variações
-  async criarVariacao(payload: {
-    produtoId: string;
-    tipo: string;
-    valor: string;
-    sku: string;
-    precoAdicional?: number;
-    estoque: number;
-    ordem?: number;
-  }) {
+  async criarVariacao(payload: CriarVariacaoRmqDto) {
     const { produtoId, tipo, valor, sku, precoAdicional, estoque, ordem } =
       payload;
 
@@ -610,15 +572,7 @@ export class SalesService {
     return variacao;
   }
 
-  async atualizarVariacao(payload: {
-    id: string;
-    tipo?: string;
-    valor?: string;
-    sku?: string;
-    precoAdicional?: number;
-    estoque?: number;
-    ordem?: number;
-  }) {
+  async atualizarVariacao(payload: AtualizarVariacaoRmqDto) {
     const { id, sku, ...data } = payload;
 
     // Verificar se a variação existe
@@ -663,18 +617,7 @@ export class SalesService {
     return { message: 'Variação excluída com sucesso' };
   }
 
-  async uploadImagem(payload: {
-    produtoId: string;
-    tipo: string;
-    legenda?: string;
-    ordem?: number;
-    file: {
-      originalname: string;
-      mimetype: string;
-      size: number;
-      buffer: Buffer;
-    };
-  }) {
+  async uploadImagem(payload: UploadImagemRmqDto) {
     const { produtoId, tipo, legenda, ordem, file } = payload;
 
     const produto = await this.salesRepository.findProdutoById(produtoId);

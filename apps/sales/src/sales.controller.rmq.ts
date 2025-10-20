@@ -4,6 +4,12 @@ import { SalesService } from './sales.service';
 import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
 import { AtualizarItemCarrinhoDto } from './dto/atualizar-item-carrinho.dto';
 import { RemoverItemCarrinhoDto } from './dto/remover-item-carrinho.dto';
+import { CriarProdutoRmqDto } from './dto/criar-produto-rmq.dto';
+import { CriarCategoriaRmqDto } from './dto/criar-categoria-rmq.dto';
+import { AtualizarCategoriaRmqDto } from './dto/atualizar-categoria-rmq.dto';
+import { CriarVariacaoRmqDto } from './dto/criar-variacao-rmq.dto';
+import { AtualizarVariacaoRmqDto } from './dto/atualizar-variacao-rmq.dto';
+import { UploadImagemRmqDto } from './dto/upload-imagem-rmq.dto';
 import { IExceptionFilter } from 'apps/generics/filters/IExceptionFilterGrpc';
 
 @Controller()
@@ -76,12 +82,12 @@ export class SalesControllerRMQ {
   }
 
   @MessagePattern({ cmd: 'Sales.CriarProduto' })
-  criarProduto(payload: any) {
+  criarProduto(payload: CriarProdutoRmqDto) {
     return this.salesService.criarProduto(payload);
   }
 
   @MessagePattern({ cmd: 'Sales.CriarCategoria' })
-  criarCategoria(payload: any) {
+  criarCategoria(payload: CriarCategoriaRmqDto) {
     return this.salesService.criarCategoria(payload);
   }
 
@@ -96,7 +102,7 @@ export class SalesControllerRMQ {
   }
 
   @MessagePattern({ cmd: 'Sales.AtualizarCategoria' })
-  atualizarCategoria(payload: any) {
+  atualizarCategoria(payload: AtualizarCategoriaRmqDto) {
     return this.salesService.atualizarCategoria(payload);
   }
 
@@ -106,7 +112,7 @@ export class SalesControllerRMQ {
   }
 
   @MessagePattern({ cmd: 'Sales.CriarVariacao' })
-  criarVariacao(payload: any) {
+  criarVariacao(payload: CriarVariacaoRmqDto) {
     return this.salesService.criarVariacao(payload);
   }
 
@@ -121,7 +127,7 @@ export class SalesControllerRMQ {
   }
 
   @MessagePattern({ cmd: 'Sales.AtualizarVariacao' })
-  atualizarVariacao(payload: any) {
+  atualizarVariacao(payload: AtualizarVariacaoRmqDto) {
     return this.salesService.atualizarVariacao(payload);
   }
 
@@ -131,7 +137,7 @@ export class SalesControllerRMQ {
   }
 
   @MessagePattern({ cmd: 'Sales.UploadImagem' })
-  uploadImagem(payload: any) {
+  uploadImagem(payload: UploadImagemRmqDto) {
     return this.salesService.uploadImagem(payload);
   }
 

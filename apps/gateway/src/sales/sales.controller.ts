@@ -8,12 +8,17 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiConsumes,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { Observable } from 'rxjs';
@@ -38,6 +43,9 @@ import {
 import { ProdutoCriadoRes } from './types/criar-produto.types';
 import { CategoriaRes, ListaCategoriasRes } from './types/categoria.types';
 import { VariacaoRes, ListaVariacoesRes } from './types/variacao.types';
+import { ImagemUploadRes, ListaImagensRes } from './types/imagem.types';
+import { CriarImagemDto } from './dto/criar-imagem.dto';
+import { MulterFile } from 'apps/generics/types/multer.types';
 
 @Controller('sales')
 @ApiTags('Sales')
@@ -237,5 +245,53 @@ export class SalesController {
   @Delete('variacoes/:id')
   excluirVariacao(@Param('id') id: string): Observable<MessageRes> {
     return this.salesService.excluirVariacao(id);
+  }
+
+  // Imagens
+  @ApiOperation({ summary: 'Fazer upload de imagem do produto' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+        produtoId: { type: 'string' },
+        tipo: { type: 'string', enum: ['principal', 'galeria', 'miniatura'] },
+        legenda: { type: 'string' },
+        ordem: { type: 'number' },
+      },
+      required: ['file', 'produtoId', 'tipo'],
+    },
+  })
+  @ApiOkResponse({ type: ImagemUploadRes })
+  @Roles('vendedor')
+  @Post('imagens/upload')
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor('file'))
+  uploadImagem(
+    @UploadedFile() file: MulterFile,
+    @Body() body: CriarImagemDto,
+  ): Observable<ImagemUploadRes> {
+    return this.salesService.uploadImagem(file, body);
+  }
+
+  @ApiOperation({ summary: 'Listar imagens de um produto' })
+  @ApiOkResponse({ type: ListaImagensRes })
+  @Get('imagens/produto/:produtoId')
+  listarImagensProduto(
+    @Param('produtoId') produtoId: string,
+  ): Observable<ListaImagensRes> {
+    return this.salesService.listarImagensProduto(produtoId);
+  }
+
+  @ApiOperation({ summary: 'Excluir imagem' })
+  @ApiOkResponse({ type: MessageRes })
+  @Roles('vendedor')
+  @Delete('imagens/:id')
+  excluirImagem(@Param('id') id: string): Observable<MessageRes> {
+    return this.salesService.excluirImagem(id);
   }
 }

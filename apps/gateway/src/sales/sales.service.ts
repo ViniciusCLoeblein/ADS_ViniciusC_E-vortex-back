@@ -17,6 +17,9 @@ import { AtualizarCategoriaDto } from './dto/atualizar-categoria.dto';
 import { VariacaoRes, ListaVariacoesRes } from './types/variacao.types';
 import { CriarVariacaoDto } from './dto/criar-variacao.dto';
 import { AtualizarVariacaoDto } from './dto/atualizar-variacao.dto';
+import { ImagemUploadRes, ListaImagensRes } from './types/imagem.types';
+import { CriarImagemDto } from './dto/criar-imagem.dto';
+import { MulterFile } from 'apps/generics/types/multer.types';
 
 @Injectable()
 export class SalesService {
@@ -173,5 +176,34 @@ export class SalesService {
 
   excluirVariacao(id: string): Observable<MessageRes> {
     return this.clientRMQ.send({ cmd: 'Sales.ExcluirVariacao' }, { id });
+  }
+
+  uploadImagem(
+    file: MulterFile,
+    payload: CriarImagemDto,
+  ): Observable<ImagemUploadRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.UploadImagem' },
+      {
+        ...payload,
+        file: {
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          buffer: file.buffer,
+        },
+      },
+    );
+  }
+
+  listarImagensProduto(produtoId: string): Observable<ListaImagensRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.ListarImagensProduto' },
+      { produtoId },
+    );
+  }
+
+  excluirImagem(id: string): Observable<MessageRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.ExcluirImagem' }, { id });
   }
 }

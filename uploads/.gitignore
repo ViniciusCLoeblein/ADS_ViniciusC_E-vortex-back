@@ -1,0 +1,8 @@
+# Ignorar todos os arquivos de upload
+*
+# Mas manter o arquivo .gitignore
+!.gitignore
+# E manter o diretório produtos
+!produtos/
+!produtos/.gitkeep
+

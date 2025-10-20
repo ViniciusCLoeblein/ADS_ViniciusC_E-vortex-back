@@ -99,7 +99,24 @@ export class AuthService {
     return token;
   }
 
-  async registerVendedor(payload: any): Promise<any> {
+  async registerVendedor(payload: {
+    nome: string;
+    email: string;
+    senha: string;
+    cpf: string;
+    telefone?: string;
+    cnpj: string;
+    razaoSocial: string;
+    nomeFantasia: string;
+    inscricaoEstadual: string;
+    contaBancaria?: Record<string, unknown>;
+  }): Promise<{
+    userId: string;
+    vendedorId: string;
+    accessToken: string;
+    accessTokenExpiresAt: string;
+    status: string;
+  }> {
     const {
       nome,
       email,

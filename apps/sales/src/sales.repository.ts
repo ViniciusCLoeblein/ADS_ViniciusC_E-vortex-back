@@ -28,7 +28,6 @@ export class SalesRepository {
     private categoriasRepository: Repository<CategoriasEntity>,
   ) {}
 
-  // Carrinho
   async findCarrinhoByUsuario(
     usuarioId: string,
   ): Promise<CarrinhosEntity | null> {
@@ -254,5 +253,28 @@ export class SalesRepository {
 
   async deleteVariacao(id: string): Promise<void> {
     await this.variacoesRepository.delete(id);
+  }
+
+  async createImagem(
+    imagem: Partial<ImagensProdutoEntity>,
+  ): Promise<ImagensProdutoEntity> {
+    return this.imagensRepository.save(imagem);
+  }
+
+  async findImagemById(id: string): Promise<ImagensProdutoEntity | null> {
+    return this.imagensRepository.findOne({ where: { id } });
+  }
+
+  async findAllImagensByProduto(
+    produtoId: string,
+  ): Promise<ImagensProdutoEntity[]> {
+    return this.imagensRepository.find({
+      where: { produto_id: produtoId },
+      order: { ordem: 'ASC' },
+    });
+  }
+
+  async deleteImagem(id: string): Promise<void> {
+    await this.imagensRepository.delete(id);
   }
 }

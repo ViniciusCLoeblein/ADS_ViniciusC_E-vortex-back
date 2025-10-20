@@ -4,10 +4,17 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { RedocModule } from 'nest-redoc';
 import { AllExceptionsFilter } from 'apps/generics/filters/rpc-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'verbose', 'debug', 'log'],
+  });
+
+  // Servir arquivos estáticos
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads',
   });
 
   const config = new DocumentBuilder()

@@ -129,4 +129,19 @@ export class SalesControllerRMQ {
   excluirVariacao(payload: { id: string }) {
     return this.salesService.excluirVariacao(payload.id);
   }
+
+  @MessagePattern({ cmd: 'Sales.UploadImagem' })
+  uploadImagem(payload: any) {
+    return this.salesService.uploadImagem(payload);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ListarImagensProduto' })
+  listarImagensProduto(payload: { produtoId: string }) {
+    return this.salesService.listarImagensProduto(payload.produtoId);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ExcluirImagem' })
+  excluirImagem(payload: { id: string }) {
+    return this.salesService.excluirImagem(payload.id);
+  }
 }

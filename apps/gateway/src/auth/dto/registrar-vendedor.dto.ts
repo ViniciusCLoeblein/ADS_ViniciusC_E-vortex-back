@@ -107,5 +107,5 @@ export class RegistrarVendedorDto {
     example: { banco: '001', agencia: '1234', conta: '12345-6' },
   })
   @IsOptional()
-  contaBancaria?: any;
+  contaBancaria?: Record<string, unknown>;
 }

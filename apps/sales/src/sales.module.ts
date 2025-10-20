@@ -5,6 +5,7 @@ import { PostgresDatabaseService } from 'apps/generics/database';
 import { SalesControllerRMQ } from './sales.controller.rmq';
 import { SalesService } from './sales.service';
 import { SalesRepository } from './sales.repository';
+import { StorageService } from 'apps/generics/storage/storage.service';
 import { CarrinhosEntity } from 'apps/entities/carrinhos.entity';
 import { ItensCarrinhoEntity } from 'apps/entities/itens_carrinho.entity';
 import { ProdutosEntity } from 'apps/entities/produtos.entity';
@@ -37,7 +38,7 @@ import { CategoriasEntity } from 'apps/entities/categorias.entity';
     ]),
   ],
   controllers: [SalesControllerRMQ],
-  providers: [SalesRepository, SalesService],
+  providers: [SalesRepository, SalesService, StorageService],
   exports: [SalesService],
 })
 export class SalesModule {}

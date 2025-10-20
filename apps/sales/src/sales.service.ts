@@ -11,10 +11,15 @@ import { RemoverItemCarrinhoDto } from './dto/remover-item-carrinho.dto';
 import { randomUUID } from 'crypto';
 import { VariacoesProdutoEntity } from 'apps/entities/variacoes_produto.entity';
 import { CategoriasEntity } from 'apps/entities/categorias.entity';
+import { StorageService } from 'apps/generics/storage/storage.service';
+import { MulterFile } from 'apps/generics/types/multer.types';
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly salesRepository: SalesRepository) {}
+  constructor(
+    private readonly salesRepository: SalesRepository,
+    private readonly storageService: StorageService,
+  ) {}
 
   async obterCarrinho(usuarioId?: string, sessaoId?: string) {
     if (!usuarioId && !sessaoId) {
@@ -656,5 +661,93 @@ export class SalesService {
     await this.salesRepository.deleteVariacao(id);
 
     return { message: 'Variação excluída com sucesso' };
+  }
+
+  async uploadImagem(payload: {
+    produtoId: string;
+    tipo: string;
+    legenda?: string;
+    ordem?: number;
+    file: {
+      originalname: string;
+      mimetype: string;
+      size: number;
+      buffer: Buffer;
+    };
+  }) {
+    const { produtoId, tipo, legenda, ordem, file } = payload;
+
+    const produto = await this.salesRepository.findProdutoById(produtoId);
+    if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    const allowedMimetypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+    ];
+    if (!allowedMimetypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Formato de arquivo inválido. Permitido: JPEG, PNG, WEBP',
+      );
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException(
+        'Arquivo muito grande. Tamanho máximo: 5MB',
+      );
+    }
+
+    const fileData: MulterFile = {
+      fieldname: 'file',
+      originalname: file.originalname,
+      encoding: '7bit',
+      mimetype: file.mimetype,
+      size: file.size,
+      buffer: Buffer.from(file.buffer),
+    };
+
+    const url = await this.storageService.saveFile(fileData, produtoId);
+    const imagem = await this.salesRepository.createImagem({
+      produto_id: produtoId,
+      url,
+      tipo,
+      legenda: legenda || null,
+      ordem: ordem !== undefined ? ordem : 0,
+    });
+
+    return {
+      id: imagem.id,
+      url: imagem.url,
+      message: 'Imagem enviada com sucesso',
+    };
+  }
+
+  async listarImagensProduto(produtoId: string) {
+    const imagens =
+      await this.salesRepository.findAllImagensByProduto(produtoId);
+    return {
+      imagens,
+      total: imagens.length,
+    };
+  }
+
+  async excluirImagem(id: string) {
+    // Verificar se a imagem existe
+    const imagem = await this.salesRepository.findImagemById(id);
+    if (!imagem) {
+      throw new NotFoundException('Imagem não encontrada');
+    }
+
+    // Deletar arquivo físico
+    await this.storageService.deleteFile(imagem.url);
+
+    // Deletar do banco
+    await this.salesRepository.deleteImagem(id);
+
+    return { message: 'Imagem excluída com sucesso' };
   }
 }

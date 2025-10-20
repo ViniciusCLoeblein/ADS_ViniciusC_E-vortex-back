@@ -81,7 +81,11 @@ export class SalesService {
       itens: itensCompletos,
       total: itensCompletos.reduce((acc, item) => {
         const preco = parseFloat(item.precoUnitario);
-        return acc + preco * item.quantidade;
+        const precoAdicional = item.variacao
+          ? parseFloat(item.variacao.precoAdicional)
+          : 0;
+        const precoTotal = preco + precoAdicional;
+        return acc + precoTotal * item.quantidade;
       }, 0),
     };
   }

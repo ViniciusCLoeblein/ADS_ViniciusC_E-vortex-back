@@ -19,6 +19,7 @@ import { SalesService } from './sales.service';
 import { Observable } from 'rxjs';
 import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
 import { AtualizarItemCarrinhoDto } from './dto/atualizar-item-carrinho.dto';
+import { ListarProdutosDto } from './dto/listar-produtos.dto';
 import { UserRequest } from 'apps/generics/decorators/user-in-request.decorator';
 import { UsuariosEntity } from 'apps/entities/usuarios.entity';
 import {
@@ -89,17 +90,9 @@ export class SalesController {
   @ApiOkResponse({ type: ProdutoListagemRes })
   @Get('produtos')
   listarProdutos(
-    @Query('categoriaId') categoriaId?: string,
-    @Query('busca') busca?: string,
-    @Query('pagina') pagina?: number,
-    @Query('limite') limite?: number,
+    @Query() query: ListarProdutosDto,
   ): Observable<ProdutoListagemRes> {
-    return this.salesService.listarProdutos({
-      categoriaId,
-      busca,
-      pagina: pagina ? Number(pagina) : undefined,
-      limite: limite ? Number(limite) : undefined,
-    });
+    return this.salesService.listarProdutos(query);
   }
 
   @ApiOperation({ summary: 'Obter produto' })

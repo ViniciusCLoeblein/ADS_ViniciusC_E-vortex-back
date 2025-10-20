@@ -524,24 +524,20 @@ export class SalesService {
     return { message: 'Categoria excluída com sucesso' };
   }
 
-  // Variações
   async criarVariacao(payload: CriarVariacaoRmqDto) {
     const { produtoId, tipo, valor, sku, precoAdicional, estoque, ordem } =
       payload;
 
-    // Verificar se o produto existe
     const produto = await this.salesRepository.findProdutoById(produtoId);
     if (!produto) {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    // Verificar se o SKU já existe
     const skuExistente = await this.salesRepository.findVariacaoBySku(sku);
     if (skuExistente) {
       throw new ConflictException('SKU da variação já está em uso');
     }
 
-    // Criar a variação
     const variacao = await this.salesRepository.createVariacao({
       produto_id: produtoId,
       tipo,
@@ -575,13 +571,11 @@ export class SalesService {
   async atualizarVariacao(payload: AtualizarVariacaoRmqDto) {
     const { id, sku, ...data } = payload;
 
-    // Verificar se a variação existe
     const variacao = await this.salesRepository.findVariacaoById(id);
     if (!variacao) {
       throw new NotFoundException('Variação não encontrada');
     }
 
-    // Se está alterando o SKU, verificar se já existe
     if (sku && sku !== variacao.sku) {
       const skuExistente = await this.salesRepository.findVariacaoBySku(sku);
       if (skuExistente) {
@@ -589,7 +583,6 @@ export class SalesService {
       }
     }
 
-    // Atualizar
     const updateData: Partial<VariacoesProdutoEntity> = {};
     if (data.tipo) updateData.tipo = data.tipo;
     if (data.valor) updateData.valor = data.valor;
@@ -601,12 +594,10 @@ export class SalesService {
 
     await this.salesRepository.updateVariacao(id, updateData);
 
-    // Retornar variação atualizada
     return this.salesRepository.findVariacaoById(id);
   }
 
   async excluirVariacao(id: string) {
-    // Verificar se a variação existe
     const variacao = await this.salesRepository.findVariacaoById(id);
     if (!variacao) {
       throw new NotFoundException('Variação não encontrada');
@@ -679,16 +670,12 @@ export class SalesService {
   }
 
   async excluirImagem(id: string) {
-    // Verificar se a imagem existe
     const imagem = await this.salesRepository.findImagemById(id);
     if (!imagem) {
       throw new NotFoundException('Imagem não encontrada');
     }
 
-    // Deletar arquivo físico
     await this.storageService.deleteFile(imagem.url);
-
-    // Deletar do banco
     await this.salesRepository.deleteImagem(id);
 
     return { message: 'Imagem excluída com sucesso' };

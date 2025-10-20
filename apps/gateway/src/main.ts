@@ -12,7 +12,6 @@ async function bootstrap() {
     logger: ['error', 'warn', 'verbose', 'debug', 'log'],
   });
 
-  // Servir arquivos estáticos
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
   });

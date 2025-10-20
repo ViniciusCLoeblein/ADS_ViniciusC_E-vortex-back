@@ -247,7 +247,6 @@ export class SalesController {
     return this.salesService.excluirVariacao(id);
   }
 
-  // Imagens
   @ApiOperation({ summary: 'Fazer upload de imagem do produto' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

@@ -29,7 +29,6 @@ export class StorageService {
     const filepath = join(folder, filename);
     await writeFile(filepath, file.buffer);
 
-    // Retorna a URL relativa
     return subfolder
       ? `/uploads/produtos/${subfolder}/${filename}`
       : `/uploads/produtos/${filename}`;

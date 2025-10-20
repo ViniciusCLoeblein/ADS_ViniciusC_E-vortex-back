@@ -38,7 +38,21 @@ import { CriarCartaoDto } from './dto/criar-cartao.dto';
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
-  // Endereços
+  @ApiOperation({ summary: 'Obter perfil do usuário autenticado' })
+  @Get('perfil')
+  obterPerfil(@UserRequest() user: UsuariosEntity) {
+    return {
+      id: user.id,
+      uuid: user.uuid,
+      nome: user.nome,
+      email: user.email,
+      cpf: user.cpf,
+      tipo: user.tipo,
+      telefone: user.telefone,
+      emailVerificado: user.emailVerificado,
+    };
+  }
+
   @ApiOperation({ summary: 'Criar novo endereço' })
   @ApiOkResponse({ type: EnderecoRes })
   @Post('enderecos')
@@ -90,7 +104,6 @@ export class CustomerController {
     return this.customerService.excluirEndereco(id, user.id);
   }
 
-  // Cartões
   @ApiOperation({ summary: 'Adicionar cartão de crédito' })
   @ApiOkResponse({ type: CartaoRes })
   @Post('cartoes')
@@ -121,7 +134,6 @@ export class CustomerController {
     return this.customerService.excluirCartao(id, user.id);
   }
 
-  // Notificações
   @ApiOperation({ summary: 'Listar notificações' })
   @ApiOkResponse({ type: ListaNotificacoesRes })
   @Get('notificacoes')
@@ -141,7 +153,6 @@ export class CustomerController {
     return this.customerService.marcarComoLida(id, user.id);
   }
 
-  // Pedidos
   @ApiOperation({ summary: 'Listar pedidos do usuário' })
   @ApiOkResponse({ type: ListaPedidosRes })
   @Get('pedidos')
@@ -161,4 +172,3 @@ export class CustomerController {
     return this.customerService.obterPedido(id, user.id);
   }
 }
-

@@ -6,7 +6,6 @@ import {
   ListaEnderecosRes,
   CartaoRes,
   ListaCartoesRes,
-  NotificacaoRes,
   ListaNotificacoesRes,
   PedidoDetalheRes,
   ListaPedidosRes,
@@ -23,7 +22,6 @@ export class CustomerService {
     private readonly clientRMQ: ClientRMQ,
   ) {}
 
-  // Endereços
   criarEndereco(
     usuarioId: string,
     payload: CriarEnderecoDto,
@@ -66,7 +64,6 @@ export class CustomerService {
     );
   }
 
-  // Cartões
   criarCartao(
     usuarioId: string,
     payload: CriarCartaoDto,
@@ -91,7 +88,6 @@ export class CustomerService {
     );
   }
 
-  // Notificações
   listarNotificacoes(usuarioId: string): Observable<ListaNotificacoesRes> {
     return this.clientRMQ.send(
       { cmd: 'Customer.ListarNotificacoes' },
@@ -106,7 +102,6 @@ export class CustomerService {
     );
   }
 
-  // Pedidos
   listarPedidos(usuarioId: string): Observable<ListaPedidosRes> {
     return this.clientRMQ.send(
       { cmd: 'Customer.ListarPedidos' },
@@ -121,4 +116,3 @@ export class CustomerService {
     );
   }
 }
-

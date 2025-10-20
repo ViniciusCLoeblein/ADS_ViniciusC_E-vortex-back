@@ -33,7 +33,6 @@ export class CustomerService {
       principal,
     } = payload;
 
-    // Se for principal, desmarcar outros
     if (principal) {
       await this.customerRepository.setPrincipalEndereco(usuarioId);
     }
@@ -86,7 +85,6 @@ export class CustomerService {
       throw new ForbiddenException('Acesso negado');
     }
 
-    // Se for principal, desmarcar outros
     if (principal && !endereco.principal) {
       await this.customerRepository.setPrincipalEndereco(usuarioId);
     }
@@ -134,12 +132,10 @@ export class CustomerService {
       principal,
     } = payload;
 
-    // Hash do número e CVV
     const numeroHash = await bcrypt.hash(numero, 10);
     const cvvHash = await bcrypt.hash(cvv, 10);
     const ultimosDigitos = numero.slice(-4);
 
-    // Se for principal, desmarcar outros
     if (principal) {
       await this.customerRepository.setPrincipalCartao(usuarioId);
     }
@@ -159,7 +155,6 @@ export class CustomerService {
       ativo: true,
     });
 
-    // Retornar sem dados sensíveis
     return {
       id: cartao.id,
       uuid: cartao.uuid,
@@ -178,7 +173,6 @@ export class CustomerService {
     const cartoes =
       await this.customerRepository.findCartoesByUsuario(usuarioId);
 
-    // Retornar apenas dados não sensíveis
     const cartoesSeguros = cartoes.map((c) => ({
       id: c.id,
       uuid: c.uuid,
@@ -237,7 +231,6 @@ export class CustomerService {
     return { message: 'Notificação marcada como lida' };
   }
 
-  // Pedidos
   async listarPedidos(usuarioId: string) {
     const pedidos =
       await this.customerRepository.findPedidosByUsuario(usuarioId);

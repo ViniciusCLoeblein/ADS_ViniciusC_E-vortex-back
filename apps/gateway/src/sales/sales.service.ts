@@ -121,7 +121,6 @@ export class SalesService {
     return this.clientRMQ.send({ cmd: 'Sales.ListarFavoritos' }, { usuarioId });
   }
 
-  // Categorias
   criarCategoria(payload: CriarCategoriaDto): Observable<CategoriaRes> {
     return this.clientRMQ.send({ cmd: 'Sales.CriarCategoria' }, payload);
   }
@@ -148,7 +147,6 @@ export class SalesService {
     return this.clientRMQ.send({ cmd: 'Sales.ExcluirCategoria' }, { id });
   }
 
-  // Variações
   criarVariacao(payload: CriarVariacaoDto): Observable<VariacaoRes> {
     return this.clientRMQ.send({ cmd: 'Sales.CriarVariacao' }, payload);
   }

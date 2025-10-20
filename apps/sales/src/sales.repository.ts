@@ -57,7 +57,6 @@ export class SalesRepository {
     await this.carrinhosRepository.update(id, data);
   }
 
-  // Itens do Carrinho
   async findItensCarrinho(carrinhoId: string): Promise<ItensCarrinhoEntity[]> {
     return this.itensCarrinhoRepository.find({
       where: { carrinho_id: carrinhoId },
@@ -101,7 +100,6 @@ export class SalesRepository {
     await this.itensCarrinhoRepository.delete({ carrinho_id: carrinhoId });
   }
 
-  // Produtos
   async findProdutoById(id: string): Promise<ProdutosEntity | null> {
     return this.produtosRepository.findOne({ where: { id } });
   }
@@ -120,7 +118,6 @@ export class SalesRepository {
     }
 
     if (busca) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       where.nome = Like(`%${busca}%`) as any;
     }
 
@@ -132,7 +129,6 @@ export class SalesRepository {
     });
   }
 
-  // Variações
   async findVariacaoById(id: string): Promise<VariacoesProdutoEntity | null> {
     return this.variacoesRepository.findOne({ where: { id } });
   }
@@ -146,7 +142,6 @@ export class SalesRepository {
     });
   }
 
-  // Imagens
   async findImagensByProduto(
     produtoId: string,
   ): Promise<ImagensProdutoEntity[]> {
@@ -156,7 +151,6 @@ export class SalesRepository {
     });
   }
 
-  // Favoritos
   async findFavorito(
     usuarioId: string,
     produtoId: string,
@@ -224,7 +218,6 @@ export class SalesRepository {
     await this.categoriasRepository.delete(id);
   }
 
-  // Variações
   async createVariacao(
     variacao: Partial<VariacoesProdutoEntity>,
   ): Promise<VariacoesProdutoEntity> {

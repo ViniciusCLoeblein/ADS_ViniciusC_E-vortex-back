@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { SalesModule } from './sales/sales.module';
+import { CustomerModule } from './customer/customer.module';
 import { APP_GUARD } from '@nestjs/core';
 import { HealthCheckController } from './health.controller';
 import { TerminusModule } from '@nestjs/terminus';
@@ -20,6 +21,7 @@ import { RolesGuard } from 'apps/generics/guards/roles.guard';
     TerminusModule,
     AuthModule,
     SalesModule,
+    CustomerModule,
   ],
   controllers: [HealthCheckController],
   providers: [

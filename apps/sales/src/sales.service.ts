@@ -2,12 +2,15 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { SalesRepository } from './sales.repository';
 import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
 import { AtualizarItemCarrinhoDto } from './dto/atualizar-item-carrinho.dto';
 import { RemoverItemCarrinhoDto } from './dto/remover-item-carrinho.dto';
 import { randomUUID } from 'crypto';
+import { VariacoesProdutoEntity } from 'apps/entities/variacoes_produto.entity';
+import { CategoriasEntity } from 'apps/entities/categorias.entity';
 
 @Injectable()
 export class SalesService {
@@ -25,20 +28,18 @@ export class SalesService {
       : await this.salesRepository.findCarrinhoBySessao(sessaoId);
 
     if (!carrinho) {
-      // Criar novo carrinho
       carrinho = await this.salesRepository.createCarrinho({
         usuario_id: usuarioId || null,
         sessao_id: sessaoId || null,
         ativo: true,
         expira_em: sessaoId
           ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          : null, // 7 dias para sessão
+          : null,
       });
     }
 
     const itens = await this.salesRepository.findItensCarrinho(carrinho.id);
 
-    // Buscar informações dos produtos
     const itensCompletos = await Promise.all(
       itens.map(async (item) => {
         const produto = await this.salesRepository.findProdutoById(
@@ -94,13 +95,11 @@ export class SalesService {
       );
     }
 
-    // Verificar se o produto existe
     const produto = await this.salesRepository.findProdutoById(produtoId);
     if (!produto) {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    // Verificar variação se fornecida
     if (variacaoId) {
       const variacao = await this.salesRepository.findVariacaoById(variacaoId);
       if (!variacao || variacao.produto_id !== produtoId) {
@@ -108,7 +107,6 @@ export class SalesService {
       }
     }
 
-    // Obter ou criar carrinho
     let carrinho = usuarioId
       ? await this.salesRepository.findCarrinhoByUsuario(usuarioId)
       : await this.salesRepository.findCarrinhoBySessao(sessaoId);
@@ -124,7 +122,6 @@ export class SalesService {
       });
     }
 
-    // Verificar se o item já existe no carrinho
     const itemExistente = await this.salesRepository.findItemCarrinho(
       carrinho.id,
       produtoId,
@@ -132,12 +129,10 @@ export class SalesService {
     );
 
     if (itemExistente) {
-      // Atualizar quantidade
       await this.salesRepository.updateItemCarrinho(itemExistente.id, {
         quantidade: itemExistente.quantidade + quantidade,
       });
     } else {
-      // Adicionar novo item
       const precoUnitario = produto.precoPromocional || produto.preco;
       await this.salesRepository.createItemCarrinho({
         carrinho_id: carrinho.id,
@@ -148,7 +143,6 @@ export class SalesService {
       });
     }
 
-    // Atualizar timestamp do carrinho
     await this.salesRepository.updateCarrinho(carrinho.id, {
       atualizado_em: new Date(),
     });
@@ -169,7 +163,6 @@ export class SalesService {
       throw new BadRequestException('Quantidade deve ser maior que zero');
     }
 
-    // Verificar se o carrinho existe
     const carrinho = usuarioId
       ? await this.salesRepository.findCarrinhoByUsuario(usuarioId)
       : await this.salesRepository.findCarrinhoBySessao(sessaoId);
@@ -178,10 +171,7 @@ export class SalesService {
       throw new NotFoundException('Carrinho não encontrado');
     }
 
-    // Atualizar o item
     await this.salesRepository.updateItemCarrinho(itemId, { quantidade });
-
-    // Atualizar timestamp do carrinho
     await this.salesRepository.updateCarrinho(carrinho.id, {
       atualizado_em: new Date(),
     });
@@ -198,7 +188,6 @@ export class SalesService {
       );
     }
 
-    // Verificar se o carrinho existe
     const carrinho = usuarioId
       ? await this.salesRepository.findCarrinhoByUsuario(usuarioId)
       : await this.salesRepository.findCarrinhoBySessao(sessaoId);
@@ -207,10 +196,8 @@ export class SalesService {
       throw new NotFoundException('Carrinho não encontrado');
     }
 
-    // Remover o item
     await this.salesRepository.deleteItemCarrinho(itemId);
 
-    // Atualizar timestamp do carrinho
     await this.salesRepository.updateCarrinho(carrinho.id, {
       atualizado_em: new Date(),
     });
@@ -315,13 +302,11 @@ export class SalesService {
   }
 
   async adicionarFavorito(usuarioId: string, produtoId: string) {
-    // Verificar se o produto existe
     const produto = await this.salesRepository.findProdutoById(produtoId);
     if (!produto) {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    // Verificar se já existe
     const favoritoExistente = await this.salesRepository.findFavorito(
       usuarioId,
       produtoId,
@@ -383,5 +368,289 @@ export class SalesService {
         };
       }),
     };
+  }
+
+  async criarProduto(payload: {
+    usuarioId: string;
+    categoriaId: string;
+    sku: string;
+    nome: string;
+    descricao: string;
+    descricaoCurta: string;
+    preco: number;
+    precoPromocional?: number;
+    pesoKg: number;
+    alturaCm: number;
+    larguraCm: number;
+    profundidadeCm: number;
+    estoque: number;
+    estoqueMinimo: number;
+    tags?: string;
+    destaque?: boolean;
+    ativo?: boolean;
+  }) {
+    const {
+      usuarioId,
+      categoriaId,
+      sku,
+      nome,
+      descricao,
+      descricaoCurta,
+      preco,
+      precoPromocional,
+      pesoKg,
+      alturaCm,
+      larguraCm,
+      profundidadeCm,
+      estoque,
+      estoqueMinimo,
+      tags,
+      destaque,
+      ativo,
+    } = payload;
+
+    const skuExistente = await this.salesRepository.findProdutoBySku(sku);
+    if (skuExistente) {
+      throw new ConflictException('SKU já cadastrado');
+    }
+
+    const produto = await this.salesRepository.createProduto({
+      uuid: randomUUID(),
+      vendedorId: usuarioId,
+      categoriaId,
+      sku,
+      nome,
+      descricao,
+      descricaoCurta,
+      preco: preco.toString(),
+      precoPromocional: precoPromocional
+        ? precoPromocional.toString()
+        : preco.toString(),
+      pesoKg: pesoKg.toString(),
+      alturaCm: alturaCm.toString(),
+      larguraCm: larguraCm.toString(),
+      profundidadeCm: profundidadeCm.toString(),
+      estoque,
+      estoqueMinimo,
+      vendidos: 0,
+      visualizacoes: 0,
+      avaliacaoMedia: '0.00',
+      totalAvaliacoes: 0,
+      tags: tags || '',
+      ativo: ativo !== undefined ? ativo : true,
+      destaque: destaque !== undefined ? destaque : false,
+    });
+
+    return produto;
+  }
+
+  async criarCategoria(payload: {
+    nome: string;
+    descricao: string;
+    slug: string;
+    icone?: string;
+    corHex?: string;
+    ordem?: number;
+    categoriaPaiId?: string;
+  }) {
+    const { nome, descricao, slug, icone, corHex, ordem, categoriaPaiId } =
+      payload;
+
+    const slugExistente = await this.salesRepository.findCategoriaBySlug(slug);
+    if (slugExistente) {
+      throw new ConflictException('Slug já está em uso');
+    }
+
+    const categoria = await this.salesRepository.createCategoria({
+      uuid: randomUUID(),
+      nome,
+      descricao,
+      slug,
+      icone: icone || '',
+      cor_hex: corHex || '#000000',
+      ordem: ordem !== undefined ? ordem : 0,
+      categoria_pai_id: categoriaPaiId || null,
+      ativo: true,
+    });
+
+    return categoria;
+  }
+
+  async listarCategorias() {
+    const categorias = await this.salesRepository.findAllCategorias();
+    return {
+      categorias,
+      total: categorias.length,
+    };
+  }
+
+  async obterCategoria(id: string) {
+    const categoria = await this.salesRepository.findCategoriaById(id);
+    if (!categoria) {
+      throw new NotFoundException('Categoria não encontrada');
+    }
+    return categoria;
+  }
+
+  async atualizarCategoria(payload: {
+    id: string;
+    nome?: string;
+    descricao?: string;
+    slug?: string;
+    icone?: string;
+    corHex?: string;
+    ordem?: number;
+    categoriaPaiId?: string;
+    ativo?: boolean;
+  }) {
+    const { id, slug, ...data } = payload;
+
+    const categoria = await this.salesRepository.findCategoriaById(id);
+    if (!categoria) {
+      throw new NotFoundException('Categoria não encontrada');
+    }
+
+    if (slug && slug !== categoria.slug) {
+      const slugExistente =
+        await this.salesRepository.findCategoriaBySlug(slug);
+      if (slugExistente) {
+        throw new ConflictException('Slug já está em uso');
+      }
+    }
+
+    const updateData: Partial<CategoriasEntity> = {};
+    if (data.nome) updateData.nome = data.nome;
+    if (data.descricao) updateData.descricao = data.descricao;
+    if (slug) updateData.slug = slug;
+    if (data.icone !== undefined) updateData.icone = data.icone;
+    if (data.corHex !== undefined) updateData.cor_hex = data.corHex;
+    if (data.ordem !== undefined) updateData.ordem = data.ordem;
+    if (data.categoriaPaiId !== undefined)
+      updateData.categoria_pai_id = data.categoriaPaiId;
+    if (data.ativo !== undefined) updateData.ativo = data.ativo;
+
+    await this.salesRepository.updateCategoria(id, updateData);
+
+    return this.salesRepository.findCategoriaById(id);
+  }
+
+  async excluirCategoria(id: string) {
+    const categoria = await this.salesRepository.findCategoriaById(id);
+    if (!categoria) {
+      throw new NotFoundException('Categoria não encontrada');
+    }
+
+    await this.salesRepository.deleteCategoria(id);
+
+    return { message: 'Categoria excluída com sucesso' };
+  }
+
+  // Variações
+  async criarVariacao(payload: {
+    produtoId: string;
+    tipo: string;
+    valor: string;
+    sku: string;
+    precoAdicional?: number;
+    estoque: number;
+    ordem?: number;
+  }) {
+    const { produtoId, tipo, valor, sku, precoAdicional, estoque, ordem } =
+      payload;
+
+    // Verificar se o produto existe
+    const produto = await this.salesRepository.findProdutoById(produtoId);
+    if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    // Verificar se o SKU já existe
+    const skuExistente = await this.salesRepository.findVariacaoBySku(sku);
+    if (skuExistente) {
+      throw new ConflictException('SKU da variação já está em uso');
+    }
+
+    // Criar a variação
+    const variacao = await this.salesRepository.createVariacao({
+      produto_id: produtoId,
+      tipo,
+      valor,
+      sku,
+      preco_adicional: precoAdicional ? precoAdicional.toString() : '0.00',
+      estoque,
+      ordem: ordem !== undefined ? ordem : 0,
+    });
+
+    return variacao;
+  }
+
+  async listarVariacoesProduto(produtoId: string) {
+    const variacoes =
+      await this.salesRepository.findAllVariacoesByProduto(produtoId);
+    return {
+      variacoes,
+      total: variacoes.length,
+    };
+  }
+
+  async obterVariacao(id: string) {
+    const variacao = await this.salesRepository.findVariacaoById(id);
+    if (!variacao) {
+      throw new NotFoundException('Variação não encontrada');
+    }
+    return variacao;
+  }
+
+  async atualizarVariacao(payload: {
+    id: string;
+    tipo?: string;
+    valor?: string;
+    sku?: string;
+    precoAdicional?: number;
+    estoque?: number;
+    ordem?: number;
+  }) {
+    const { id, sku, ...data } = payload;
+
+    // Verificar se a variação existe
+    const variacao = await this.salesRepository.findVariacaoById(id);
+    if (!variacao) {
+      throw new NotFoundException('Variação não encontrada');
+    }
+
+    // Se está alterando o SKU, verificar se já existe
+    if (sku && sku !== variacao.sku) {
+      const skuExistente = await this.salesRepository.findVariacaoBySku(sku);
+      if (skuExistente) {
+        throw new ConflictException('SKU da variação já está em uso');
+      }
+    }
+
+    // Atualizar
+    const updateData: Partial<VariacoesProdutoEntity> = {};
+    if (data.tipo) updateData.tipo = data.tipo;
+    if (data.valor) updateData.valor = data.valor;
+    if (sku) updateData.sku = sku;
+    if (data.precoAdicional !== undefined)
+      updateData.preco_adicional = data.precoAdicional.toString();
+    if (data.estoque !== undefined) updateData.estoque = data.estoque;
+    if (data.ordem !== undefined) updateData.ordem = data.ordem;
+
+    await this.salesRepository.updateVariacao(id, updateData);
+
+    // Retornar variação atualizada
+    return this.salesRepository.findVariacaoById(id);
+  }
+
+  async excluirVariacao(id: string) {
+    // Verificar se a variação existe
+    const variacao = await this.salesRepository.findVariacaoById(id);
+    if (!variacao) {
+      throw new NotFoundException('Variação não encontrada');
+    }
+
+    await this.salesRepository.deleteVariacao(id);
+
+    return { message: 'Variação excluída com sucesso' };
   }
 }

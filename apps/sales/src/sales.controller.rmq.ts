@@ -74,4 +74,59 @@ export class SalesControllerRMQ {
   listarFavoritos(payload: { usuarioId: string }) {
     return this.salesService.listarFavoritos(payload.usuarioId);
   }
+
+  @MessagePattern({ cmd: 'Sales.CriarProduto' })
+  criarProduto(payload: any) {
+    return this.salesService.criarProduto(payload);
+  }
+
+  @MessagePattern({ cmd: 'Sales.CriarCategoria' })
+  criarCategoria(payload: any) {
+    return this.salesService.criarCategoria(payload);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ListarCategorias' })
+  listarCategorias() {
+    return this.salesService.listarCategorias();
+  }
+
+  @MessagePattern({ cmd: 'Sales.ObterCategoria' })
+  obterCategoria(payload: { id: string }) {
+    return this.salesService.obterCategoria(payload.id);
+  }
+
+  @MessagePattern({ cmd: 'Sales.AtualizarCategoria' })
+  atualizarCategoria(payload: any) {
+    return this.salesService.atualizarCategoria(payload);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ExcluirCategoria' })
+  excluirCategoria(payload: { id: string }) {
+    return this.salesService.excluirCategoria(payload.id);
+  }
+
+  @MessagePattern({ cmd: 'Sales.CriarVariacao' })
+  criarVariacao(payload: any) {
+    return this.salesService.criarVariacao(payload);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ListarVariacoesProduto' })
+  listarVariacoesProduto(payload: { produtoId: string }) {
+    return this.salesService.listarVariacoesProduto(payload.produtoId);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ObterVariacao' })
+  obterVariacao(payload: { id: string }) {
+    return this.salesService.obterVariacao(payload.id);
+  }
+
+  @MessagePattern({ cmd: 'Sales.AtualizarVariacao' })
+  atualizarVariacao(payload: any) {
+    return this.salesService.atualizarVariacao(payload);
+  }
+
+  @MessagePattern({ cmd: 'Sales.ExcluirVariacao' })
+  excluirVariacao(payload: { id: string }) {
+    return this.salesService.excluirVariacao(payload.id);
+  }
 }

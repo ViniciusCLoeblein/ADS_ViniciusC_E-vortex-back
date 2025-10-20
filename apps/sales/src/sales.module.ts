@@ -11,6 +11,7 @@ import { ProdutosEntity } from 'apps/entities/produtos.entity';
 import { VariacoesProdutoEntity } from 'apps/entities/variacoes_produto.entity';
 import { ImagensProdutoEntity } from 'apps/entities/imagens_produto.entity';
 import { FavoritosEntity } from 'apps/entities/favoritos.entity';
+import { CategoriasEntity } from 'apps/entities/categorias.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { FavoritosEntity } from 'apps/entities/favoritos.entity';
       VariacoesProdutoEntity,
       ImagensProdutoEntity,
       FavoritosEntity,
+      CategoriasEntity,
     ]),
   ],
   controllers: [SalesControllerRMQ],

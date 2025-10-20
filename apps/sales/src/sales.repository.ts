@@ -6,7 +6,8 @@ import { ProdutosEntity } from 'apps/entities/produtos.entity';
 import { VariacoesProdutoEntity } from 'apps/entities/variacoes_produto.entity';
 import { ImagensProdutoEntity } from 'apps/entities/imagens_produto.entity';
 import { FavoritosEntity } from 'apps/entities/favoritos.entity';
-import { Repository, Like } from 'typeorm';
+import { CategoriasEntity } from 'apps/entities/categorias.entity';
+import { Repository, Like, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class SalesRepository {
@@ -23,6 +24,8 @@ export class SalesRepository {
     private imagensRepository: Repository<ImagensProdutoEntity>,
     @InjectRepository(FavoritosEntity)
     private favoritosRepository: Repository<FavoritosEntity>,
+    @InjectRepository(CategoriasEntity)
+    private categoriasRepository: Repository<CategoriasEntity>,
   ) {}
 
   // Carrinho
@@ -67,7 +70,11 @@ export class SalesRepository {
     produtoId: string,
     variacaoId?: string,
   ): Promise<ItensCarrinhoEntity | null> {
-    const where: any = { carrinho_id: carrinhoId, produto_id: produtoId };
+    const where: {
+      carrinho_id: string;
+      produto_id: string;
+      variacao_id?: string;
+    } = { carrinho_id: carrinhoId, produto_id: produtoId };
     if (variacaoId) {
       where.variacao_id = variacaoId;
     }
@@ -107,14 +114,15 @@ export class SalesRepository {
     take: number;
   }): Promise<[ProdutosEntity[], number]> {
     const { categoriaId, busca, skip, take } = params;
-    const where: any = { ativo: true };
+    const where: FindOptionsWhere<ProdutosEntity> = { ativo: true };
 
     if (categoriaId) {
       where.categoriaId = categoriaId;
     }
 
     if (busca) {
-      where.nome = Like(`%${busca}%`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      where.nome = Like(`%${busca}%`) as any;
     }
 
     return this.produtosRepository.findAndCount({
@@ -174,5 +182,77 @@ export class SalesRepository {
       where: { usuario_id: usuarioId },
       order: { criado_em: 'DESC' },
     });
+  }
+
+  async createProduto(
+    produto: Partial<ProdutosEntity>,
+  ): Promise<ProdutosEntity> {
+    return this.produtosRepository.save(produto);
+  }
+
+  async findProdutoBySku(sku: string): Promise<ProdutosEntity | null> {
+    return this.produtosRepository.findOne({ where: { sku } });
+  }
+
+  async createCategoria(
+    categoria: Partial<CategoriasEntity>,
+  ): Promise<CategoriasEntity> {
+    return this.categoriasRepository.save(categoria);
+  }
+
+  async findCategoriaBySlug(slug: string): Promise<CategoriasEntity | null> {
+    return this.categoriasRepository.findOne({ where: { slug } });
+  }
+
+  async findCategoriaById(id: string): Promise<CategoriasEntity | null> {
+    return this.categoriasRepository.findOne({ where: { id } });
+  }
+
+  async findAllCategorias(): Promise<CategoriasEntity[]> {
+    return this.categoriasRepository.find({
+      order: { ordem: 'ASC', nome: 'ASC' },
+    });
+  }
+
+  async updateCategoria(
+    id: string,
+    data: Partial<CategoriasEntity>,
+  ): Promise<void> {
+    await this.categoriasRepository.update(id, data);
+  }
+
+  async deleteCategoria(id: string): Promise<void> {
+    await this.categoriasRepository.delete(id);
+  }
+
+  // Variações
+  async createVariacao(
+    variacao: Partial<VariacoesProdutoEntity>,
+  ): Promise<VariacoesProdutoEntity> {
+    return this.variacoesRepository.save(variacao);
+  }
+
+  async findVariacaoBySku(sku: string): Promise<VariacoesProdutoEntity | null> {
+    return this.variacoesRepository.findOne({ where: { sku } });
+  }
+
+  async findAllVariacoesByProduto(
+    produtoId: string,
+  ): Promise<VariacoesProdutoEntity[]> {
+    return this.variacoesRepository.find({
+      where: { produto_id: produtoId },
+      order: { ordem: 'ASC' },
+    });
+  }
+
+  async updateVariacao(
+    id: string,
+    data: Partial<VariacoesProdutoEntity>,
+  ): Promise<void> {
+    await this.variacoesRepository.update(id, data);
+  }
+
+  async deleteVariacao(id: string): Promise<void> {
+    await this.variacoesRepository.delete(id);
   }
 }

@@ -9,6 +9,14 @@ import {
   ProdutoDetalheRes,
   ProdutoListagemRes,
 } from './types/sales.types';
+import { ProdutoCriadoRes } from './types/criar-produto.types';
+import { CriarProdutoDto } from './dto/criar-produto.dto';
+import { CategoriaRes, ListaCategoriasRes } from './types/categoria.types';
+import { CriarCategoriaDto } from './dto/criar-categoria.dto';
+import { AtualizarCategoriaDto } from './dto/atualizar-categoria.dto';
+import { VariacaoRes, ListaVariacoesRes } from './types/variacao.types';
+import { CriarVariacaoDto } from './dto/criar-variacao.dto';
+import { AtualizarVariacaoDto } from './dto/atualizar-variacao.dto';
 
 @Injectable()
 export class SalesService {
@@ -63,6 +71,16 @@ export class SalesService {
     return this.clientRMQ.send({ cmd: 'Sales.LimparCarrinho' }, { usuarioId });
   }
 
+  criarProduto(
+    usuarioId: string,
+    payload: CriarProdutoDto,
+  ): Observable<ProdutoCriadoRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.CriarProduto' },
+      { ...payload, usuarioId },
+    );
+  }
+
   listarProdutos(payload: {
     categoriaId?: string;
     busca?: string;
@@ -98,5 +116,62 @@ export class SalesService {
 
   listarFavoritos(usuarioId: string): Observable<FavoritosRes> {
     return this.clientRMQ.send({ cmd: 'Sales.ListarFavoritos' }, { usuarioId });
+  }
+
+  // Categorias
+  criarCategoria(payload: CriarCategoriaDto): Observable<CategoriaRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.CriarCategoria' }, payload);
+  }
+
+  listarCategorias(): Observable<ListaCategoriasRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.ListarCategorias' }, {});
+  }
+
+  obterCategoria(id: string): Observable<CategoriaRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.ObterCategoria' }, { id });
+  }
+
+  atualizarCategoria(
+    id: string,
+    payload: AtualizarCategoriaDto,
+  ): Observable<CategoriaRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.AtualizarCategoria' },
+      { id, ...payload },
+    );
+  }
+
+  excluirCategoria(id: string): Observable<MessageRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.ExcluirCategoria' }, { id });
+  }
+
+  // Variações
+  criarVariacao(payload: CriarVariacaoDto): Observable<VariacaoRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.CriarVariacao' }, payload);
+  }
+
+  listarVariacoesProduto(produtoId: string): Observable<ListaVariacoesRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.ListarVariacoesProduto' },
+      { produtoId },
+    );
+  }
+
+  obterVariacao(id: string): Observable<VariacaoRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.ObterVariacao' }, { id });
+  }
+
+  atualizarVariacao(
+    id: string,
+    payload: AtualizarVariacaoDto,
+  ): Observable<VariacaoRes> {
+    return this.clientRMQ.send(
+      { cmd: 'Sales.AtualizarVariacao' },
+      { id, ...payload },
+    );
+  }
+
+  excluirVariacao(id: string): Observable<MessageRes> {
+    return this.clientRMQ.send({ cmd: 'Sales.ExcluirVariacao' }, { id });
   }
 }

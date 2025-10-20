@@ -3,6 +3,8 @@ import { ClientRMQ } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RegistrarVendedorDto } from './dto/registrar-vendedor.dto';
+import { VendedorRegistradoRes } from './types/vendedor.types';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +23,12 @@ export class AuthService {
     accessTokenExpiresAt: string;
   }> {
     return this.clientRMQ.send({ cmd: 'Auth.Register' }, payload);
+  }
+
+  registrarVendedor(
+    payload: RegistrarVendedorDto,
+  ): Observable<VendedorRegistradoRes> {
+    return this.clientRMQ.send({ cmd: 'Auth.RegisterVendedor' }, payload);
   }
 
   login(payload: LoginDto): Observable<{

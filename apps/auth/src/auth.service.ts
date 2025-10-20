@@ -12,6 +12,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthTokenResponse, TestResponse } from './types/auth.types';
 import { UsuariosEntity } from 'apps/entities/usuarios.entity';
+import { VendedoresEntity } from 'apps/entities/vendedores.entity';
 
 @Injectable()
 export class AuthService {
@@ -96,5 +97,78 @@ export class AuthService {
     }
     const token = await this.createToken(user.id);
     return token;
+  }
+
+  async registerVendedor(payload: any): Promise<any> {
+    const {
+      nome,
+      email,
+      senha,
+      cpf,
+      telefone,
+      cnpj,
+      razaoSocial,
+      nomeFantasia,
+      inscricaoEstadual,
+      contaBancaria,
+    } = payload;
+
+    const [existingByEmail, existingByCpf] = await Promise.all([
+      this.authRepository.findUserByEmail(email),
+      this.authRepository.findUserByCpf(cpf),
+    ]);
+
+    if (existingByEmail || existingByCpf) {
+      throw new BadRequestException(
+        existingByEmail ? 'Email já cadastrado' : 'CPF já cadastrado',
+      );
+    }
+
+    const existingByCnpj = await this.authRepository.findVendedorByCnpj(cnpj);
+    if (existingByCnpj) {
+      throw new BadRequestException('CNPJ já cadastrado');
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 10);
+    const userToCreate: Partial<UsuariosEntity> = {
+      uuid: randomUUID(),
+      nome,
+      email,
+      senhaHash,
+      cpf,
+      tipo: 'vendedor',
+      telefone: telefone ?? null,
+      avatarUrl: null,
+      dataNascimento: null,
+      aceitaMarketing: false,
+      emailVerificado: false,
+      ultimoLogin: null,
+    };
+
+    const usuario = await this.authRepository.createUser(userToCreate);
+    const vendedorToCreate: Partial<VendedoresEntity> = {
+      usuario_id: usuario.id,
+      uuid: randomUUID(),
+      cnpj,
+      razao_social: razaoSocial,
+      nome_fantasia: nomeFantasia,
+      inscricao_estadual: inscricaoEstadual,
+      conta_bancaria: contaBancaria || null,
+      comissao_percentual: '5.00',
+      status: 'pendente',
+      motivo_rejeicao: null,
+      data_aprovacao: null,
+      termos_versao: null,
+      termos_aceito_em: null,
+    };
+
+    const vendedor = await this.authRepository.createVendedor(vendedorToCreate);
+    const token = await this.createToken(usuario.id);
+
+    return {
+      ...token,
+      vendedorId: vendedor.id,
+      status: vendedor.status,
+    };
   }
 }

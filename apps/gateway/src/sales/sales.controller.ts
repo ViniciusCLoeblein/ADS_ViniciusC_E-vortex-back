@@ -26,6 +26,7 @@ import { AtualizarCategoriaDto } from './dto/atualizar-categoria.dto';
 import { CriarVariacaoDto } from './dto/criar-variacao.dto';
 import { AtualizarVariacaoDto } from './dto/atualizar-variacao.dto';
 import { UserRequest } from 'apps/generics/decorators/user-in-request.decorator';
+import { Roles } from 'apps/generics/decorators/roles.decorator';
 import { UsuariosEntity } from 'apps/entities/usuarios.entity';
 import {
   CarrinhoRes,
@@ -96,6 +97,7 @@ export class SalesController {
 
   @ApiOperation({ summary: 'Criar novo produto' })
   @ApiOkResponse({ type: ProdutoCriadoRes })
+  @Roles('vendedor')
   @Post('produtos')
   @HttpCode(201)
   criarProduto(
@@ -151,9 +153,9 @@ export class SalesController {
     return this.salesService.removerFavorito(user.id, produtoId);
   }
 
-  // Categorias
   @ApiOperation({ summary: 'Criar nova categoria' })
   @ApiOkResponse({ type: CategoriaRes })
+  @Roles('vendedor', 'admin')
   @Post('categorias')
   @HttpCode(201)
   criarCategoria(@Body() body: CriarCategoriaDto): Observable<CategoriaRes> {
@@ -176,6 +178,7 @@ export class SalesController {
 
   @ApiOperation({ summary: 'Atualizar categoria' })
   @ApiOkResponse({ type: CategoriaRes })
+  @Roles('vendedor', 'admin')
   @Put('categorias/:id')
   atualizarCategoria(
     @Param('id') id: string,
@@ -186,14 +189,15 @@ export class SalesController {
 
   @ApiOperation({ summary: 'Excluir categoria' })
   @ApiOkResponse({ type: MessageRes })
+  @Roles('vendedor', 'admin')
   @Delete('categorias/:id')
   excluirCategoria(@Param('id') id: string): Observable<MessageRes> {
     return this.salesService.excluirCategoria(id);
   }
 
-  // Variações
   @ApiOperation({ summary: 'Criar nova variação de produto' })
   @ApiOkResponse({ type: VariacaoRes })
+  @Roles('vendedor')
   @Post('variacoes')
   @HttpCode(201)
   criarVariacao(@Body() body: CriarVariacaoDto): Observable<VariacaoRes> {
@@ -218,6 +222,7 @@ export class SalesController {
 
   @ApiOperation({ summary: 'Atualizar variação' })
   @ApiOkResponse({ type: VariacaoRes })
+  @Roles('vendedor')
   @Put('variacoes/:id')
   atualizarVariacao(
     @Param('id') id: string,
@@ -228,6 +233,7 @@ export class SalesController {
 
   @ApiOperation({ summary: 'Excluir variação' })
   @ApiOkResponse({ type: MessageRes })
+  @Roles('vendedor')
   @Delete('variacoes/:id')
   excluirVariacao(@Param('id') id: string): Observable<MessageRes> {
     return this.salesService.excluirVariacao(id);

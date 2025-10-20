@@ -25,4 +25,9 @@ export class AuthControllerRMQ {
   login(payload: LoginDto): Promise<AuthTokenResponse> {
     return this.authService.login(payload);
   }
+
+  @MessagePattern({ cmd: 'Auth.RegisterVendedor' })
+  registerVendedor(payload: any): Promise<any> {
+    return this.authService.registerVendedor(payload);
+  }
 }

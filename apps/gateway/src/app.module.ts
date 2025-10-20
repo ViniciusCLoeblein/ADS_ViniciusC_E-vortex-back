@@ -6,6 +6,7 @@ import { SalesModule } from './sales/sales.module';
 import { APP_GUARD } from '@nestjs/core';
 import { HealthCheckController } from './health.controller';
 import { TerminusModule } from '@nestjs/terminus';
+import { RolesGuard } from 'apps/generics/guards/roles.guard';
 
 @Module({
   imports: [
@@ -25,6 +26,10 @@ import { TerminusModule } from '@nestjs/terminus';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

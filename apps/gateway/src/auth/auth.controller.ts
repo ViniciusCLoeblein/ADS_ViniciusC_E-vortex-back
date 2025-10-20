@@ -1,10 +1,12 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Observable } from 'rxjs';
 import { Public } from 'apps/generics/decorators/public-decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RegistrarVendedorDto } from './dto/registrar-vendedor.dto';
+import { VendedorRegistradoRes } from './types/vendedor.types';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -27,6 +29,16 @@ export class AuthController {
     accessTokenExpiresAt: string;
   }> {
     return this.authService.register(body);
+  }
+
+  @ApiOperation({ summary: 'Registrar vendedor' })
+  @ApiOkResponse({ type: VendedorRegistradoRes })
+  @Post('register/vendedor')
+  @HttpCode(201)
+  registrarVendedor(
+    @Body() body: RegistrarVendedorDto,
+  ): Observable<VendedorRegistradoRes> {
+    return this.authService.registrarVendedor(body);
   }
 
   @ApiOperation({ summary: 'Login' })

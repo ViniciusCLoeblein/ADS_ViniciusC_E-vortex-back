@@ -17,6 +17,11 @@ export class HealthCheckController {
   @Get()
   @Public()
   check() {
-    return this.health.check([() => this.db.pingCheck('database')]);
+    return this.health.check([
+      () =>
+        this.db.pingCheck('database', {
+          timeout: 5000,
+        }),
+    ]);
   }
 }

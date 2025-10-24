@@ -4,17 +4,20 @@ networks:
   app-network:
 
 services:
-  gateway:
-    image: gateway:1.0.0
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: evortex:latest
+    container_name: evortex-app
     ports:
-      - 3000:3000
-    command: ["bash", "./deploy.sh", "gateway"]
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
     networks:
       - app-network
-    environment:
-      HOST_RMQ: "rabbitmq"
-    deploy:
-      mode: replicated
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/usr/src/app/uploads

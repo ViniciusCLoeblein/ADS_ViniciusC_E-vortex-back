@@ -2,7 +2,7 @@ FROM node:22-bullseye-slim
 
 WORKDIR /usr/src/app
 
-COPY yarn.lock ./
+COPY package.json yarn.lock ./
 
 RUN yarn install --frozen-lockfile && yarn cache clean
 

@@ -35,7 +35,7 @@ docker build -t evortex:latest .
 ### 2. Iniciar os Serviços
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Este comando irá:
@@ -46,17 +46,17 @@ Este comando irá:
 ### 3. Verificar o Status
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### 4. Visualizar Logs
 
 ```bash
 # Logs de todos os serviços
-docker-compose logs -f
+docker compose logs -f
 
 # Logs apenas da aplicação
-docker-compose logs -f app
+docker compose logs -f app
 ```
 
 ## 🔧 Configuração
@@ -82,8 +82,6 @@ JWT_EXPIRES_IN=7d
 NODE_ENV=production
 ```
 
-**⚠️ Importante:** Configure todas as variáveis de banco de dados conforme seu ambiente em nuvem.
-
 ### Portas
 
 - **Aplicação**: `http://localhost:3000`
@@ -96,41 +94,31 @@ NODE_ENV=production
 ### Parar os Serviços
 
 ```bash
-docker-compose stop
+docker compose stop
 ```
 
 ### Remover os Containers
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Remover Containers e Volumes
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ### Reconstruir a Imagem
 
 ```bash
-docker-compose build --no-cache
+docker compose build --no-cache
 ```
 
 ### Reiniciar um Serviço Específico
 
 ```bash
-docker-compose restart app
-```
-
-### Executar Comandos no Container
-
-```bash
-# Acessar o shell do container
-docker-compose exec app sh
-
-# Executar migrations (se necessário)
-docker-compose exec app yarn migration:run
+docker compose restart app
 ```
 
 ## 🧪 Testes
@@ -160,7 +148,7 @@ open http://localhost:3000/api
 3. Verifique se o IP da aplicação está na whitelist do banco
 4. Verifique os logs da aplicação:
    ```bash
-   docker-compose logs -f app
+   docker compose logs -f app
    ```
 
 ### Erro de Permissão
@@ -168,20 +156,14 @@ open http://localhost:3000/api
 Se houver problemas com permissões de arquivos:
 
 ```bash
-# Dê permissão de execução ao script
 chmod +x deploy.sh
-
-# Ajuste permissões do diretório de uploads
 chmod -R 755 uploads
 ```
 
 ### Limpar Cache do Docker
 
 ```bash
-# Remover imagens não utilizadas
 docker image prune
-
-# Remover tudo (cuidado!)
 docker system prune -a
 ```
 
@@ -191,16 +173,16 @@ Para atualizar a aplicação:
 
 ```bash
 # 1. Parar os serviços
-docker-compose stop
+docker compose stop
 
 # 2. Reconstruir a imagem
-docker-compose build --no-cache
+docker compose build --no-cache
 
 # 3. Iniciar novamente
-docker-compose up -d
+docker compose up -d
 
 # 4. Verificar logs
-docker-compose logs -f app
+docker compose logs -f app
 ```
 
 ## 📊 Monitoramento
@@ -218,29 +200,7 @@ curl http://localhost:3000/health
 Os logs são exibidos no console e podem ser visualizados com:
 
 ```bash
-docker-compose logs -f app
-```
-
-## 🛡️ Segurança
-
-### Recomendações
-
-1. **Nunca** commite o arquivo `.env` no repositório
-2. Use uma `JWT_PRIVATE_KEY` forte e única
-3. Configure HTTPS em produção
-4. Use secrets do Docker para variáveis sensíveis
-5. Configure firewall adequadamente
-
-### Usando Docker Secrets
-
-```bash
-# Criar secret
-echo "sua-chave-secreta" | docker secret create jwt_private_key -
-
-# Usar no docker-compose.yml
-secrets:
-  jwt_private_key:
-    external: true
+docker compose logs -f app
 ```
 
 ## 📦 Produção
@@ -250,36 +210,3 @@ secrets:
 ```bash
 docker build -t evortex:latest --target production .
 ```
-
-### Usar Docker Registry
-
-```bash
-# Tag da imagem
-docker tag evortex:latest seu-registry.com/evortex:latest
-
-# Push para o registry
-docker push seu-registry.com/evortex:latest
-```
-
-## 🎯 Próximos Passos
-
-1. Configure um reverse proxy (Nginx/Traefik)
-2. Configure SSL/TLS
-3. Implemente CI/CD
-4. Configure monitoramento (Prometheus/Grafana)
-5. Configure alertas
-6. Configure backup do banco de dados em nuvem
-
-## 📞 Suporte
-
-Em caso de problemas:
-
-1. Verifique os logs: `docker-compose logs -f`
-2. Verifique o status: `docker-compose ps`
-3. Consulte a documentação do NestJS
-4. Abra uma issue no repositório
-
----
-
-**Desenvolvido com ❤️ usando NestJS**
-

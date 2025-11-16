@@ -82,19 +82,17 @@ export class AuthService {
     return token;
   }
 
-  async login(payload: LoginDto): Promise<AuthTokenResponse> {
-    const { email, senha } = payload || ({} as LoginDto);
-    if (!email || !senha) {
-      throw new BadRequestException('Campos obrigatórios: email, senha');
-    }
-    const user = await this.authRepository.findUserByEmail(email);
+  async login(data: LoginDto): Promise<AuthTokenResponse> {
+    const user = await this.authRepository.findUserByEmail(data.email);
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
-    const ok = await bcrypt.compare(senha, user.senhaHash);
-    if (!ok) {
+
+    const hashedPassword = await bcrypt.compare(data.senha, user.senhaHash);
+    if (!hashedPassword) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
+
     const token = await this.createToken(user.id);
     return token;
   }

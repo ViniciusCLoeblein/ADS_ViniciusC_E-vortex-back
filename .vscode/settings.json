@@ -9,15 +9,16 @@
     "git.confirmSync": false,
     "git.enableSmartCommit": true,
     "eslint.codeActionsOnSave.rules": null,
-    "console-ninja.featureSet": "Community",
     "editor.stickyScroll.enabled": false,
     "diffEditor.ignoreTrimWhitespace": false,
     "explorer.confirmDelete": false,
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "eslint.validate": [
-      "javascript",
-      "typescript",
-    ],
+    "workbench.colorCustomizations": {
+      "activityBar.background": "#ff0000",
+      "titleBar.activeBackground": "#ff0000",
+      "titleBar.inactiveBackground": "#ff0000",
+      "titleBar.activeForeground": "#ffffff"
+    },
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit"
     },

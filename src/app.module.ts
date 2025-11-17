@@ -8,6 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { HealthCheckController } from './health.controller';
 import { TerminusModule } from '@nestjs/terminus';
 import { RolesGuard } from './generics/guards/roles.guard';
+import { JwtAuthGuard } from './generics/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -28,6 +29,10 @@ import { RolesGuard } from './generics/guards/roles.guard';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_GUARD,

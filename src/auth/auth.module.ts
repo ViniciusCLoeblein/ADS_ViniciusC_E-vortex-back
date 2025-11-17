@@ -6,8 +6,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from '../generics/guards/jwt-auth.guard';
 import { UsuariosEntity } from '../entities/usuarios.entity';
 import { VendedoresEntity } from '../entities/vendedores.entity';
 
@@ -27,6 +25,7 @@ import { VendedoresEntity } from '../entities/vendedores.entity';
     TypeOrmModule.forFeature([UsuariosEntity, VendedoresEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
+      global: true,
       useFactory: async () => {
         const options: JwtModuleOptions = {
           secret: process.env.JWT_PRIVATE_KEY,
@@ -42,14 +41,7 @@ import { VendedoresEntity } from '../entities/vendedores.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthRepository,
-    AuthService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-  ],
-  exports: [AuthService],
+  providers: [AuthRepository, AuthService],
+  exports: [AuthService, AuthRepository],
 })
 export class AuthModule {}

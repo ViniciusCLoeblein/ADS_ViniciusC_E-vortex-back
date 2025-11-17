@@ -37,8 +37,8 @@ export class CategoriasEntity {
   ordem: number;
 
   @Index()
-  @Column({ type: 'bigint', name: 'categoria_pai_id' })
-  categoria_pai_id: string;
+  @Column({ type: 'bigint', name: 'categoria_pai_id', nullable: true })
+  categoria_pai_id: string | null;
 
   @Index()
   @Column({ type: 'boolean' })

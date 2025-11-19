@@ -296,7 +296,7 @@ export class SalesService {
           })),
           imagens: imagens.map((i) => ({
             id: i.id,
-            url: i.url,
+            url: 'http://163.176.133.251:3000/' + i.url,
             tipo: i.tipo,
             legenda: i.legenda,
           })),

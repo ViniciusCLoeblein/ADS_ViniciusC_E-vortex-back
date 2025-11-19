@@ -269,18 +269,43 @@ export class SalesService {
       take: limite,
     });
 
+    const produtosCompletos = await Promise.all(
+      produtos.map(async (p) => {
+        const [variacoes, imagens] = await Promise.all([
+          this.salesRepository.findVariacoesByProduto(p.id),
+          this.salesRepository.findImagensByProduto(p.id),
+        ]);
+
+        return {
+          id: p.id,
+          uuid: p.uuid,
+          nome: p.nome,
+          descricaoCurta: p.descricaoCurta,
+          preco: p.preco,
+          precoPromocional: p.precoPromocional,
+          avaliacaoMedia: p.avaliacaoMedia,
+          totalAvaliacoes: p.totalAvaliacoes,
+          estoque: p.estoque,
+          variacoes: variacoes.map((v) => ({
+            id: v.id,
+            tipo: v.tipo,
+            valor: v.valor,
+            sku: v.sku,
+            precoAdicional: v.preco_adicional,
+            estoque: v.estoque,
+          })),
+          imagens: imagens.map((i) => ({
+            id: i.id,
+            url: i.url,
+            tipo: i.tipo,
+            legenda: i.legenda,
+          })),
+        };
+      }),
+    );
+
     return {
-      produtos: produtos.map((p) => ({
-        id: p.id,
-        uuid: p.uuid,
-        nome: p.nome,
-        descricaoCurta: p.descricaoCurta,
-        preco: p.preco,
-        precoPromocional: p.precoPromocional,
-        avaliacaoMedia: p.avaliacaoMedia,
-        totalAvaliacoes: p.totalAvaliacoes,
-        estoque: p.estoque,
-      })),
+      produtos: produtosCompletos,
       total,
       pagina,
       limite,

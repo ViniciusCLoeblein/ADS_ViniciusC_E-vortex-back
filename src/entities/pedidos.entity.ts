@@ -46,7 +46,7 @@ export class PedidosEntity {
   metodo_pagamento: string;
 
   @Column({ type: 'jsonb', name: 'dados_pagamento', nullable: true })
-  dados_pagamento: any;
+  dados_pagamento: Record<string, unknown> | null;
 
   @Column({
     type: 'varchar',

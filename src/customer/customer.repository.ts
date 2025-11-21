@@ -5,6 +5,8 @@ import { CartoesCreditoEntity } from '../entities/cartoes_credito.entity';
 import { NotificacoesEntity } from '../entities/notificacoes.entity';
 import { PedidosEntity } from '../entities/pedidos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
+import { ProdutosEntity } from '../entities/produtos.entity';
+import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 import { UsuariosEntity } from '../entities/usuarios.entity';
 import { Repository } from 'typeorm';
 
@@ -23,6 +25,10 @@ export class CustomerRepository {
     private itensPedidoRepository: Repository<ItensPedidoEntity>,
     @InjectRepository(UsuariosEntity)
     private usuariosRepository: Repository<UsuariosEntity>,
+    @InjectRepository(ProdutosEntity)
+    private produtosRepository: Repository<ProdutosEntity>,
+    @InjectRepository(VariacoesProdutoEntity)
+    private variacoesRepository: Repository<VariacoesProdutoEntity>,
   ) {}
 
   async createEndereco(
@@ -137,5 +143,37 @@ export class CustomerRepository {
     data: Partial<UsuariosEntity>,
   ): Promise<void> {
     await this.usuariosRepository.update(id, data);
+  }
+
+  async createPedido(pedido: Partial<PedidosEntity>): Promise<PedidosEntity> {
+    return this.pedidosRepository.save(pedido);
+  }
+
+  async createItensPedido(
+    itens: Partial<ItensPedidoEntity>[],
+  ): Promise<ItensPedidoEntity[]> {
+    return this.itensPedidoRepository.save(itens);
+  }
+
+  async findProdutoById(id: string): Promise<ProdutosEntity | null> {
+    return this.produtosRepository.findOne({ where: { id } });
+  }
+
+  async findVariacaoById(id: string): Promise<VariacoesProdutoEntity | null> {
+    return this.variacoesRepository.findOne({ where: { id } });
+  }
+
+  async updateProduto(
+    id: string,
+    data: Partial<ProdutosEntity>,
+  ): Promise<void> {
+    await this.produtosRepository.update(id, data);
+  }
+
+  async updateVariacao(
+    id: string,
+    data: Partial<VariacoesProdutoEntity>,
+  ): Promise<void> {
+    await this.variacoesRepository.update(id, data);
   }
 }

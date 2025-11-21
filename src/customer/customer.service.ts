@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { CustomerRepository } from './customer.repository';
 import { randomUUID } from 'crypto';
@@ -13,6 +14,9 @@ import {
 } from './types/endereco.types';
 import { CriarCartaoPayload, CartaoSeguro } from './types/cartao.types';
 import { MessageResponse } from './types/response.types';
+import { CriarPedidoDto } from './dto/criar-pedido.dto';
+import { PedidoDetalheRes } from './types/customer.types';
+import { ProdutosEntity } from '../entities/produtos.entity';
 
 @Injectable()
 export class CustomerService {
@@ -229,6 +233,135 @@ export class CustomerService {
     });
 
     return { message: 'Notificação marcada como lida' };
+  }
+
+  async criarPedido(
+    payload: CriarPedidoDto & { usuarioId: string },
+  ): Promise<PedidoDetalheRes> {
+    const {
+      usuarioId,
+      enderecoEntregaId,
+      cartaoCreditoId,
+      metodoPagamento,
+      frete,
+      desconto = 0,
+      itens,
+    } = payload;
+
+    if (!itens || itens.length === 0) {
+      throw new BadRequestException('Pedido sem itens');
+    }
+
+    const endereco =
+      await this.customerRepository.findEnderecoById(enderecoEntregaId);
+    if (!endereco || endereco.usuario_id !== usuarioId) {
+      throw new ForbiddenException('Endereço inválido');
+    }
+
+    if (cartaoCreditoId) {
+      const cartao =
+        await this.customerRepository.findCartaoById(cartaoCreditoId);
+      if (!cartao || cartao.usuario_id !== usuarioId) {
+        throw new ForbiddenException('Cartão inválido');
+      }
+    }
+
+    let subtotal = 0;
+
+    const itensPreparados: Array<{
+      produto: ProdutosEntity;
+      variacaoId: string | null;
+      quantidade: number;
+      precoUnitario: number;
+      variacaoDescricao: string | null;
+    }> = [];
+
+    for (const item of itens) {
+      const produto = await this.customerRepository.findProdutoById(
+        item.produtoId,
+      );
+      if (!produto) {
+        throw new NotFoundException('Produto não encontrado');
+      }
+
+      const precoBase = parseFloat(produto.precoPromocional || produto.preco);
+
+      let precoUnitario = precoBase;
+      let variacaoDescricao: string | null = null;
+
+      if (item.variacaoId) {
+        const variacao = await this.customerRepository.findVariacaoById(
+          item.variacaoId,
+        );
+        if (!variacao || variacao.produto_id !== produto.id) {
+          throw new NotFoundException('Variação não encontrada');
+        }
+        if (variacao.estoque < item.quantidade) {
+          throw new BadRequestException('Estoque insuficiente na variação');
+        }
+        const adicional = parseFloat(variacao.preco_adicional || '0');
+        precoUnitario = precoBase + adicional;
+        variacaoDescricao = `${variacao.tipo}: ${variacao.valor}`;
+
+        await this.customerRepository.updateVariacao(variacao.id, {
+          estoque: variacao.estoque - item.quantidade,
+        });
+      } else {
+        if (produto.estoque < item.quantidade) {
+          throw new BadRequestException('Estoque insuficiente do produto');
+        }
+        await this.customerRepository.updateProduto(produto.id, {
+          estoque: produto.estoque - item.quantidade,
+        });
+      }
+
+      subtotal += precoUnitario * item.quantidade;
+
+      itensPreparados.push({
+        produto,
+        variacaoId: item.variacaoId || null,
+        quantidade: item.quantidade,
+        precoUnitario,
+        variacaoDescricao,
+      });
+    }
+
+    const total = subtotal - (desconto || 0) + (frete || 0);
+
+    const pedido = await this.customerRepository.createPedido({
+      uuid: randomUUID(),
+      usuario_id: usuarioId,
+      endereco_entrega_id: enderecoEntregaId,
+      cartao_credito_id: cartaoCreditoId || null,
+      status: 'criado',
+      subtotal: subtotal.toFixed(2),
+      desconto: (desconto || 0).toFixed(2),
+      frete: (frete || 0).toFixed(2),
+      total: total.toFixed(2),
+      metodo_pagamento: metodoPagamento,
+      dados_pagamento: null,
+    });
+
+    await this.customerRepository.createItensPedido(
+      itensPreparados.map((i) => ({
+        pedido_id: pedido.id,
+        produto_id: i.produto.id,
+        variacao_id: i.variacaoId,
+        quantidade: i.quantidade,
+        preco_unitario: i.precoUnitario.toFixed(2),
+        nome_produto: i.produto.nome,
+        variacao_descricao: i.variacaoDescricao,
+      })),
+    );
+
+    const itensSalvos = await this.customerRepository.findItensPedido(
+      pedido.id,
+    );
+
+    return {
+      ...pedido,
+      itens: itensSalvos,
+    };
   }
 
   async listarPedidos(usuarioId: string) {

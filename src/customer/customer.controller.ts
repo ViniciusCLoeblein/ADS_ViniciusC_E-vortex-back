@@ -30,6 +30,7 @@ import {
 import { CriarEnderecoDto } from './dto/criar-endereco.dto';
 import { AtualizarEnderecoDto } from './dto/atualizar-endereco.dto';
 import { CriarCartaoDto } from './dto/criar-cartao.dto';
+import { CriarPedidoDto } from './dto/criar-pedido.dto';
 
 @Controller('customer')
 @ApiTags('Customer')
@@ -152,6 +153,16 @@ export class CustomerController {
     @UserRequest() user: UsuariosEntity,
   ): Promise<MessageRes> {
     return this.customerService.marcarComoLida(id, user.id);
+  }
+
+  @ApiOperation({ summary: 'Criar pedido' })
+  @ApiOkResponse({ type: PedidoDetalheRes })
+  @Post('pedidos')
+  criarPedido(
+    @Body() body: CriarPedidoDto,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<PedidoDetalheRes> {
+    return this.customerService.criarPedido({ ...body, usuarioId: user.id });
   }
 
   @ApiOperation({ summary: 'Listar pedidos do usuário' })

@@ -11,6 +11,8 @@ import { NotificacoesEntity } from '../entities/notificacoes.entity';
 import { PedidosEntity } from '../entities/pedidos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 import { UsuariosEntity } from '../entities/usuarios.entity';
+import { ProdutosEntity } from '../entities/produtos.entity';
+import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { UsuariosEntity } from '../entities/usuarios.entity';
       PedidosEntity,
       ItensPedidoEntity,
       UsuariosEntity,
+      ProdutosEntity,
+      VariacoesProdutoEntity,
     ]),
   ],
   controllers: [CustomerController],

@@ -13,6 +13,10 @@ import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 import { ImagensProdutoEntity } from '../entities/imagens_produto.entity';
 import { FavoritosEntity } from '../entities/favoritos.entity';
 import { CategoriasEntity } from '../entities/categorias.entity';
+import { VendedoresEntity } from '../entities/vendedores.entity';
+import { PedidosEntity } from '../entities/pedidos.entity';
+import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
+import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
 
 @Module({
   imports: [
@@ -35,6 +39,10 @@ import { CategoriasEntity } from '../entities/categorias.entity';
       ImagensProdutoEntity,
       FavoritosEntity,
       CategoriasEntity,
+      VendedoresEntity,
+      PedidosEntity,
+      ItensPedidoEntity,
+      AvaliacoesEntity,
     ]),
   ],
   controllers: [SalesController],

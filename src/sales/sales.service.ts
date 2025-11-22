@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { SalesRepository } from './sales.repository';
 import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
@@ -281,43 +282,8 @@ export class SalesService {
       take: limite,
     });
 
-    const produtosCompletos = await Promise.all(
-      produtos.map(async (p) => {
-        const [variacoes, imagens] = await Promise.all([
-          this.salesRepository.findVariacoesByProduto(p.id),
-          this.salesRepository.findImagensByProduto(p.id),
-        ]);
-
-        return {
-          id: p.id,
-          uuid: p.uuid,
-          nome: p.nome,
-          descricaoCurta: p.descricaoCurta,
-          preco: p.preco,
-          precoPromocional: p.precoPromocional,
-          avaliacaoMedia: p.avaliacaoMedia,
-          totalAvaliacoes: p.totalAvaliacoes,
-          estoque: p.estoque,
-          variacoes: variacoes.map((v) => ({
-            id: v.id,
-            tipo: v.tipo,
-            valor: v.valor,
-            sku: v.sku,
-            precoAdicional: v.preco_adicional,
-            estoque: v.estoque,
-          })),
-          imagens: imagens.map((i) => ({
-            id: i.id,
-            url: i.url,
-            tipo: i.tipo,
-            legenda: i.legenda,
-          })),
-        };
-      }),
-    );
-
     return {
-      produtos: produtosCompletos,
+      produtos,
       total,
       pagina,
       limite,
@@ -336,43 +302,11 @@ export class SalesService {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    // Se o usuário for vendedor, verificar se o produto pertence a ele
     if (usuarioTipo === 'vendedor' && produto.vendedorId !== usuarioId) {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    const [variacoes, imagens] = await Promise.all([
-      this.salesRepository.findVariacoesByProduto(produtoId),
-      this.salesRepository.findImagensByProduto(produtoId),
-    ]);
-
-    return {
-      id: produto.id,
-      uuid: produto.uuid,
-      nome: produto.nome,
-      descricao: produto.descricao,
-      descricaoCurta: produto.descricaoCurta,
-      preco: produto.preco,
-      precoPromocional: produto.precoPromocional,
-      estoque: produto.estoque,
-      sku: produto.sku,
-      avaliacaoMedia: produto.avaliacaoMedia,
-      totalAvaliacoes: produto.totalAvaliacoes,
-      variacoes: variacoes.map((v) => ({
-        id: v.id,
-        tipo: v.tipo,
-        valor: v.valor,
-        sku: v.sku,
-        precoAdicional: v.preco_adicional,
-        estoque: v.estoque,
-      })),
-      imagens: imagens.map((i) => ({
-        id: i.id,
-        url: i.url,
-        tipo: i.tipo,
-        legenda: i.legenda,
-      })),
-    };
+    return produto;
   }
 
   async adicionarFavorito(usuarioId: string, produtoId: string) {
@@ -411,6 +345,12 @@ export class SalesService {
     await this.salesRepository.deleteFavorito(favorito.id);
 
     return { message: 'Produto removido dos favoritos' };
+  }
+
+  async removerTodosFavoritos(usuarioId: string) {
+    await this.salesRepository.deleteAllFavoritosByUsuario(usuarioId);
+
+    return { message: 'Todos os favoritos foram removidos' };
   }
 
   async listarFavoritos(usuarioId: string) {
@@ -834,5 +774,303 @@ export class SalesService {
     await this.salesRepository.deleteImagem(id);
 
     return { message: 'Imagem excluída com sucesso' };
+  }
+
+  async listarVendedores(params: {
+    busca?: string;
+    pagina?: number;
+    limite?: number;
+  }) {
+    const { busca, pagina = 1, limite = 20 } = params;
+    const skip = (pagina - 1) * limite;
+
+    const [vendedores, total] = await this.salesRepository.findVendedores({
+      busca,
+      skip,
+      take: limite,
+    });
+
+    const vendedoresPublicos = vendedores.map((v) => ({
+      id: v.id,
+      uuid: v.uuid,
+      nomeFantasia: v.nome_fantasia,
+      razaoSocial: v.razao_social,
+      status: v.status,
+      dataAprovacao: v.data_aprovacao,
+      criadoEm: v.criado_em,
+    }));
+
+    return {
+      vendedores: vendedoresPublicos,
+      total,
+      pagina,
+      limite,
+      totalPaginas: Math.ceil(total / limite),
+    };
+  }
+
+  async obterVendedor(id: string) {
+    const vendedor = await this.salesRepository.findVendedorById(id);
+
+    if (!vendedor) {
+      throw new NotFoundException('Vendedor não encontrado');
+    }
+
+    return {
+      id: vendedor.id,
+      uuid: vendedor.uuid,
+      nomeFantasia: vendedor.nome_fantasia,
+      razaoSocial: vendedor.razao_social,
+      status: vendedor.status,
+      dataAprovacao: vendedor.data_aprovacao,
+      criadoEm: vendedor.criado_em,
+    };
+  }
+
+  async obterVendedorPorUsuarioId(id: string) {
+    const vendedor = await this.salesRepository.findVendedorByUsuarioId(id);
+
+    if (!vendedor) {
+      throw new NotFoundException('Vendedor não encontrado');
+    }
+
+    return {
+      id: vendedor.id,
+      uuid: vendedor.uuid,
+      nomeFantasia: vendedor.nome_fantasia,
+      razaoSocial: vendedor.razao_social,
+      status: vendedor.status,
+      dataAprovacao: vendedor.data_aprovacao,
+      criadoEm: vendedor.criado_em,
+    };
+  }
+
+  async atualizarStatusPedido(
+    pedidoId: string,
+    payload: {
+      status: string;
+      codigoRastreamento?: string;
+      transportadora?: string;
+      previsaoEntrega?: string;
+      motivoCancelamento?: string;
+    },
+    usuarioId: string,
+    usuarioTipo: string,
+  ) {
+    const {
+      status,
+      codigoRastreamento,
+      transportadora,
+      previsaoEntrega,
+      motivoCancelamento,
+    } = payload;
+
+    const pedido = await this.salesRepository.findPedidoById(pedidoId);
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado');
+    }
+
+    // Verificar se o usuário tem permissão para alterar este pedido
+    if (usuarioTipo === 'vendedor') {
+      const itens =
+        await this.salesRepository.findItensPedidoByPedidoId(pedidoId);
+      const produtosIds = itens.map((item) => item.produto_id);
+      const produtos =
+        await this.salesRepository.findProdutosByIds(produtosIds);
+
+      // Verificar se pelo menos um produto pertence ao vendedor
+      const temProdutoDoVendedor = produtos.some(
+        (produto) => produto.vendedorId === usuarioId,
+      );
+
+      if (!temProdutoDoVendedor) {
+        throw new ForbiddenException(
+          'Você não tem permissão para alterar este pedido',
+        );
+      }
+    } else if (usuarioTipo !== 'admin') {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    // Validações de transição de status
+    const statusAtual = pedido.status;
+    const statusValidos: Record<string, string[]> = {
+      pendente: ['pago', 'cancelado'],
+      pago: ['processando', 'cancelado'],
+      processando: ['enviado', 'cancelado'],
+      enviado: ['entregue'],
+      entregue: [],
+      cancelado: [],
+    };
+
+    if (!statusValidos[statusAtual]?.includes(status)) {
+      throw new BadRequestException(
+        `Não é possível alterar o status de "${statusAtual}" para "${status}"`,
+      );
+    }
+
+    // Validações específicas por status
+    if (status === 'enviado') {
+      if (!codigoRastreamento) {
+        throw new BadRequestException(
+          'Código de rastreamento é obrigatório quando o status é "enviado"',
+        );
+      }
+      if (!transportadora) {
+        throw new BadRequestException(
+          'Transportadora é obrigatória quando o status é "enviado"',
+        );
+      }
+    }
+
+    if (status === 'cancelado' && !motivoCancelamento) {
+      throw new BadRequestException(
+        'Motivo do cancelamento é obrigatório quando o status é "cancelado"',
+      );
+    }
+
+    // Preparar dados de atualização
+    const updateData: Partial<typeof pedido> = {
+      status,
+    };
+
+    // Atualizar datas conforme o status
+    if (status === 'pago') {
+      updateData.data_pagamento = new Date();
+    } else if (status === 'enviado') {
+      updateData.data_envio = new Date();
+      updateData.codigo_rastreamento = codigoRastreamento;
+      updateData.transportadora = transportadora;
+      if (previsaoEntrega) {
+        updateData.previsao_entrega = new Date(previsaoEntrega);
+      }
+    } else if (status === 'entregue') {
+      updateData.data_entrega = new Date();
+    } else if (status === 'cancelado') {
+      updateData.data_cancelamento = new Date();
+      updateData.motivo_cancelamento = motivoCancelamento;
+    }
+
+    await this.salesRepository.updatePedido(pedidoId, updateData);
+
+    const pedidoAtualizado =
+      await this.salesRepository.findPedidoById(pedidoId);
+
+    return {
+      id: pedidoAtualizado.id,
+      uuid: pedidoAtualizado.uuid,
+      status: pedidoAtualizado.status,
+      codigoRastreamento: pedidoAtualizado.codigo_rastreamento,
+      transportadora: pedidoAtualizado.transportadora,
+      previsaoEntrega: pedidoAtualizado.previsao_entrega,
+      dataPagamento: pedidoAtualizado.data_pagamento,
+      dataEnvio: pedidoAtualizado.data_envio,
+      dataEntrega: pedidoAtualizado.data_entrega,
+      dataCancelamento: pedidoAtualizado.data_cancelamento,
+      motivoCancelamento: pedidoAtualizado.motivo_cancelamento,
+      atualizadoEm: pedidoAtualizado.atualizado_em,
+    };
+  }
+
+  async criarAvaliacao(
+    payload: {
+      pedidoId: string;
+      produtoId: string;
+      nota: number;
+      titulo?: string;
+      comentario?: string;
+    },
+    usuarioId: string,
+  ) {
+    const { pedidoId, produtoId, nota, titulo, comentario } = payload;
+
+    const pedido = await this.salesRepository.findPedidoByIdAndUsuario(
+      pedidoId,
+      usuarioId,
+    );
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado');
+    }
+
+    if (pedido.status !== 'entregue' && pedido.status !== 'cancelado') {
+      throw new BadRequestException(
+        'Apenas pedidos entregues ou cancelados podem ser avaliados',
+      );
+    }
+
+    const itemPedido =
+      await this.salesRepository.findItensPedidoByPedidoAndProduto(
+        pedidoId,
+        produtoId,
+      );
+    if (!itemPedido) {
+      throw new BadRequestException('Este produto não está neste pedido');
+    }
+
+    const avaliacaoExistente =
+      await this.salesRepository.findAvaliacaoByPedidoAndProduto(
+        pedidoId,
+        produtoId,
+        usuarioId,
+      );
+    if (avaliacaoExistente) {
+      throw new ConflictException('Você já avaliou este produto neste pedido');
+    }
+
+    const avaliacao = await this.salesRepository.createAvaliacao({
+      pedido_id: pedidoId,
+      produto_id: produtoId,
+      usuario_id: usuarioId,
+      nota,
+      titulo: titulo || null,
+      comentario: comentario || null,
+      aprovada: null, // Aguardando aprovação
+    });
+
+    // Calcular nova média de avaliações do produto
+    const avaliacoesAprovadas =
+      await this.salesRepository.findAvaliacoesByProduto(produtoId);
+    const totalAvaliacoes = avaliacoesAprovadas.length + 1; // +1 porque a nova ainda não está aprovada
+    const somaNotas =
+      avaliacoesAprovadas.reduce((acc, av) => acc + av.nota, 0) + nota;
+    const novaMedia = (somaNotas / totalAvaliacoes).toFixed(2);
+
+    // Atualizar produto com nova média
+    await this.salesRepository.updateProdutoAvaliacao(
+      produtoId,
+      novaMedia,
+      totalAvaliacoes,
+    );
+
+    return {
+      id: avaliacao.id,
+      pedidoId: avaliacao.pedido_id,
+      produtoId: avaliacao.produto_id,
+      usuarioId: avaliacao.usuario_id,
+      nota: avaliacao.nota,
+      titulo: avaliacao.titulo,
+      comentario: avaliacao.comentario,
+      aprovada: avaliacao.aprovada,
+      criadoEm: avaliacao.criado_em,
+    };
+  }
+
+  async listarAvaliacoesProduto(produtoId: string) {
+    const avaliacoes =
+      await this.salesRepository.findAvaliacoesByProduto(produtoId);
+
+    return {
+      avaliacoes: avaliacoes.map((av) => ({
+        id: av.id,
+        produtoId: av.produto_id,
+        nota: av.nota,
+        titulo: av.titulo,
+        comentario: av.comentario,
+        respostaVendedor: av.resposta_vendedor,
+        dataResposta: av.data_resposta,
+        criadoEm: av.criado_em,
+      })),
+      total: avaliacoes.length,
+    };
   }
 }

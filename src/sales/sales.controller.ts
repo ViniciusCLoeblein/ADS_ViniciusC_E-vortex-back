@@ -37,7 +37,6 @@ import {
   CarrinhoRes,
   FavoritosRes,
   MessageRes,
-  ProdutoDetalheRes,
   ProdutoListagemRes,
 } from './types/sales.types';
 import { ProdutoCriadoRes } from './types/criar-produto.types';
@@ -46,6 +45,16 @@ import { VariacaoRes, ListaVariacoesRes } from './types/variacao.types';
 import { ImagemUploadRes, ListaImagensRes } from './types/imagem.types';
 import { CriarImagemDto } from './dto/criar-imagem.dto';
 import { MulterFile } from '../generics/types/multer.types';
+import { ListarVendedoresDto } from './dto/listar-vendedores.dto';
+import { VendedorPublicoRes, ListaVendedoresRes } from './types/vendedor.types';
+import { ProdutosEntity } from 'src/entities/produtos.entity';
+import { AtualizarStatusPedidoDto } from './dto/atualizar-status-pedido.dto';
+import { PedidoStatusAtualizadoRes } from './types/pedido.types';
+import { CriarAvaliacaoDto } from './dto/criar-avaliacao.dto';
+import {
+  AvaliacaoCriadaRes,
+  ListaAvaliacoesRes,
+} from './types/avaliacao.types';
 
 @Controller('sales')
 @ApiTags('Sales')
@@ -137,13 +146,13 @@ export class SalesController {
   }
 
   @ApiOperation({ summary: 'Obter produto' })
-  @ApiOkResponse({ type: ProdutoDetalheRes })
+  @ApiOkResponse({ type: ProdutosEntity })
   @Public()
   @Get('produtos/:id')
   obterProduto(
     @Param('id') id: string,
     @UserRequest() user?: UsuariosEntity,
-  ): Promise<ProdutoDetalheRes> {
+  ): Promise<ProdutosEntity> {
     return this.salesService.obterProduto(id, user?.id, user?.tipo);
   }
 
@@ -173,6 +182,15 @@ export class SalesController {
     @UserRequest() user: UsuariosEntity,
   ): Promise<MessageRes> {
     return this.salesService.removerFavorito(user.id, produtoId);
+  }
+
+  @ApiOperation({ summary: 'Remover todos os favoritos do usuário' })
+  @ApiOkResponse({ type: MessageRes })
+  @Delete('favoritos')
+  removerTodosFavoritos(
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<MessageRes> {
+    return this.salesService.removerTodosFavoritos(user.id);
   }
 
   @ApiOperation({ summary: 'Criar nova categoria' })
@@ -352,5 +370,68 @@ export class SalesController {
     @UserRequest() user: UsuariosEntity,
   ): Promise<MessageRes> {
     return this.salesService.excluirImagem(id, user.id, user.tipo);
+  }
+
+  @ApiOperation({ summary: 'Listar vendedores (lojas) aprovados' })
+  @ApiOkResponse({ type: ListaVendedoresRes })
+  @Public()
+  @Get('vendedores')
+  listarVendedores(
+    @Query() query: ListarVendedoresDto,
+  ): Promise<ListaVendedoresRes> {
+    return this.salesService.listarVendedores(query);
+  }
+
+  @ApiOperation({ summary: 'Obter vendedor por ID' })
+  @ApiOkResponse({ type: VendedorPublicoRes })
+  @Public()
+  @Get('vendedores/:id')
+  obterVendedor(@Param('id') id: string): Promise<VendedorPublicoRes> {
+    return this.salesService.obterVendedor(id);
+  }
+
+  @ApiOperation({ summary: 'Obter vendedor por usuário id' })
+  @ApiOkResponse({ type: VendedorPublicoRes })
+  @Public()
+  @Get('vendedores/usuario/:id')
+  obterVendedorPorUuid(@Param('id') id: string): Promise<VendedorPublicoRes> {
+    return this.salesService.obterVendedorPorUsuarioId(id);
+  }
+
+  @ApiOperation({ summary: 'Atualizar status do pedido' })
+  @ApiOkResponse({ type: PedidoStatusAtualizadoRes })
+  @Put('pedidos/:id/status')
+  atualizarStatusPedido(
+    @Param('id') id: string,
+    @Body() body: AtualizarStatusPedidoDto,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<PedidoStatusAtualizadoRes> {
+    return this.salesService.atualizarStatusPedido(
+      id,
+      body,
+      user.id,
+      user.tipo,
+    );
+  }
+
+  @ApiOperation({ summary: 'Criar avaliação de produto' })
+  @ApiOkResponse({ type: AvaliacaoCriadaRes })
+  @Post('avaliacoes')
+  @HttpCode(201)
+  criarAvaliacao(
+    @Body() body: CriarAvaliacaoDto,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<AvaliacaoCriadaRes> {
+    return this.salesService.criarAvaliacao(body, user.id);
+  }
+
+  @ApiOperation({ summary: 'Listar avaliações de um produto' })
+  @ApiOkResponse({ type: ListaAvaliacoesRes })
+  @Public()
+  @Get('produtos/:produtoId/avaliacoes')
+  listarAvaliacoesProduto(
+    @Param('produtoId') produtoId: string,
+  ): Promise<ListaAvaliacoesRes> {
+    return this.salesService.listarAvaliacoesProduto(produtoId);
   }
 }

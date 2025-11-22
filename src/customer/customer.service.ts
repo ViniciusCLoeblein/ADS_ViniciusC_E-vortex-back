@@ -254,14 +254,14 @@ export class CustomerService {
 
     const endereco =
       await this.customerRepository.findEnderecoById(enderecoEntregaId);
-    if (!endereco || endereco.usuario_id !== usuarioId) {
+    if (endereco?.usuario_id !== usuarioId) {
       throw new ForbiddenException('Endereço inválido');
     }
 
     if (cartaoCreditoId) {
       const cartao =
         await this.customerRepository.findCartaoById(cartaoCreditoId);
-      if (!cartao || cartao.usuario_id !== usuarioId) {
+      if (cartao?.usuario_id !== usuarioId) {
         throw new ForbiddenException('Cartão inválido');
       }
     }
@@ -284,7 +284,9 @@ export class CustomerService {
         throw new NotFoundException('Produto não encontrado');
       }
 
-      const precoBase = parseFloat(produto.precoPromocional || produto.preco);
+      const precoBase = Number.parseFloat(
+        produto.precoPromocional || produto.preco,
+      );
 
       let precoUnitario = precoBase;
       let variacaoDescricao: string | null = null;
@@ -299,7 +301,7 @@ export class CustomerService {
         if (variacao.estoque < item.quantidade) {
           throw new BadRequestException('Estoque insuficiente na variação');
         }
-        const adicional = parseFloat(variacao.preco_adicional || '0');
+        const adicional = Number.parseFloat(variacao.preco_adicional || '0');
         precoUnitario = precoBase + adicional;
         variacaoDescricao = `${variacao.tipo}: ${variacao.valor}`;
 
@@ -333,7 +335,7 @@ export class CustomerService {
       usuario_id: usuarioId,
       endereco_entrega_id: enderecoEntregaId,
       cartao_credito_id: cartaoCreditoId || null,
-      status: 'criado',
+      status: 'processando',
       subtotal: subtotal.toFixed(2),
       desconto: (desconto || 0).toFixed(2),
       frete: (frete || 0).toFixed(2),

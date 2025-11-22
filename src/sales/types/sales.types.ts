@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ProdutosEntity } from 'src/entities/produtos.entity';
 
 export class ProdutoInfo {
   @ApiProperty()
@@ -95,8 +96,8 @@ export class ProdutoResumoRes {
 }
 
 export class ProdutoListagemRes {
-  @ApiProperty({ type: [ProdutoResumoRes] })
-  produtos: ProdutoResumoRes[];
+  @ApiProperty({ type: [ProdutosEntity] })
+  produtos: ProdutosEntity[];
 
   @ApiProperty()
   total: number;

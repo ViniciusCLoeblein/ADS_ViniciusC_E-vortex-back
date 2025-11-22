@@ -7,7 +7,11 @@ import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 import { ImagensProdutoEntity } from '../entities/imagens_produto.entity';
 import { FavoritosEntity } from '../entities/favoritos.entity';
 import { CategoriasEntity } from '../entities/categorias.entity';
-import { Repository, Like, FindOptionsWhere } from 'typeorm';
+import { VendedoresEntity } from '../entities/vendedores.entity';
+import { PedidosEntity } from '../entities/pedidos.entity';
+import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
+import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
+import { Repository, Like, FindOptionsWhere, In } from 'typeorm';
 
 @Injectable()
 export class SalesRepository {
@@ -26,6 +30,14 @@ export class SalesRepository {
     private readonly favoritosRepository: Repository<FavoritosEntity>,
     @InjectRepository(CategoriasEntity)
     private readonly categoriasRepository: Repository<CategoriasEntity>,
+    @InjectRepository(VendedoresEntity)
+    private readonly vendedoresRepository: Repository<VendedoresEntity>,
+    @InjectRepository(PedidosEntity)
+    private readonly pedidosRepository: Repository<PedidosEntity>,
+    @InjectRepository(ItensPedidoEntity)
+    private readonly itensPedidoRepository: Repository<ItensPedidoEntity>,
+    @InjectRepository(AvaliacoesEntity)
+    private readonly avaliacoesRepository: Repository<AvaliacoesEntity>,
   ) {}
 
   async findCarrinhoByUsuario(
@@ -123,7 +135,7 @@ export class SalesRepository {
     }
 
     if (busca) {
-      where.nome = Like(`%${busca}%`) as any;
+      where.nome = Like(`%${busca}%`);
     }
 
     return this.produtosRepository.findAndCount({
@@ -173,6 +185,10 @@ export class SalesRepository {
 
   async deleteFavorito(id: string): Promise<void> {
     await this.favoritosRepository.delete(id);
+  }
+
+  async deleteAllFavoritosByUsuario(usuarioId: string): Promise<void> {
+    await this.favoritosRepository.delete({ usuario_id: usuarioId });
   }
 
   async findFavoritosByUsuario(usuarioId: string): Promise<FavoritosEntity[]> {
@@ -274,5 +290,116 @@ export class SalesRepository {
 
   async deleteImagem(id: string): Promise<void> {
     await this.imagensRepository.delete(id);
+  }
+
+  async findVendedores(params: {
+    busca?: string;
+    skip: number;
+    take: number;
+  }): Promise<[VendedoresEntity[], number]> {
+    const { busca, skip, take } = params;
+    const where: FindOptionsWhere<VendedoresEntity> = { status: 'aprovado' };
+
+    if (busca) {
+      where.nome_fantasia = Like(`%${busca}%`) as any;
+    }
+
+    return this.vendedoresRepository.findAndCount({
+      where,
+      skip,
+      take,
+      order: { criado_em: 'DESC' },
+    });
+  }
+
+  async findVendedorById(id: string): Promise<VendedoresEntity | null> {
+    return this.vendedoresRepository.findOne({
+      where: { id, status: 'aprovado' },
+    });
+  }
+
+  async findVendedorByUsuarioId(id: string): Promise<VendedoresEntity | null> {
+    return this.vendedoresRepository.findOne({ where: { usuario_id: id } });
+  }
+
+  async findPedidoById(id: string): Promise<PedidosEntity | null> {
+    return this.pedidosRepository.findOne({ where: { id } });
+  }
+
+  async findItensPedidoByPedidoId(
+    pedidoId: string,
+  ): Promise<ItensPedidoEntity[]> {
+    return this.itensPedidoRepository.find({
+      where: { pedido_id: pedidoId },
+    });
+  }
+
+  async findProdutosByIds(ids: string[]): Promise<ProdutosEntity[]> {
+    if (ids.length === 0) return [];
+    return this.produtosRepository.find({
+      where: { id: In(ids) },
+    });
+  }
+
+  async updatePedido(id: string, data: Partial<PedidosEntity>): Promise<void> {
+    await this.pedidosRepository.update(id, data);
+  }
+
+  async createAvaliacao(
+    avaliacao: Partial<AvaliacoesEntity>,
+  ): Promise<AvaliacoesEntity> {
+    return this.avaliacoesRepository.save(avaliacao);
+  }
+
+  async findAvaliacaoByPedidoAndProduto(
+    pedidoId: string,
+    produtoId: string,
+    usuarioId: string,
+  ): Promise<AvaliacoesEntity | null> {
+    return this.avaliacoesRepository.findOne({
+      where: {
+        pedido_id: pedidoId,
+        produto_id: produtoId,
+        usuario_id: usuarioId,
+      },
+    });
+  }
+
+  async findAvaliacoesByProduto(
+    produtoId: string,
+  ): Promise<AvaliacoesEntity[]> {
+    return this.avaliacoesRepository.find({
+      where: { produto_id: produtoId, aprovada: true },
+      order: { criado_em: 'DESC' },
+    });
+  }
+
+  async findPedidoByIdAndUsuario(
+    pedidoId: string,
+    usuarioId: string,
+  ): Promise<PedidosEntity | null> {
+    return this.pedidosRepository.findOne({
+      where: { id: pedidoId, usuario_id: usuarioId },
+    });
+  }
+
+  async findItensPedidoByPedidoAndProduto(
+    pedidoId: string,
+    produtoId: string,
+  ): Promise<ItensPedidoEntity | null> {
+    return this.itensPedidoRepository.findOne({
+      where: { pedido_id: pedidoId, produto_id: produtoId },
+    });
+  }
+
+  async updateProdutoAvaliacao(
+    produtoId: string,
+    avaliacaoMedia: string,
+    totalAvaliacoes: number,
+  ): Promise<void> {
+    await this.produtosRepository.update(produtoId, {
+      avaliacaoMedia,
+      totalAvaliacoes,
+    });
   }
 }

@@ -8,7 +8,7 @@ import { SalesRepository } from './sales.repository';
 import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
 import { AtualizarItemCarrinhoDto } from './dto/atualizar-item-carrinho.dto';
 import { RemoverItemCarrinhoDto } from './dto/remover-item-carrinho.dto';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 import { CategoriasEntity } from '../entities/categorias.entity';
 import { StorageService } from '../generics/storage/storage.service';
@@ -91,9 +91,9 @@ export class SalesService {
       carrinhoId: carrinho.id,
       itens: itensCompletos,
       total: itensCompletos.reduce((acc, item) => {
-        const preco = parseFloat(item.precoUnitario);
+        const preco = Number.parseFloat(item.precoUnitario);
         const precoAdicional = item.variacao
-          ? parseFloat(item.variacao.precoAdicional)
+          ? Number.parseFloat(item.variacao.precoAdicional)
           : 0;
         const precoTotal = preco + precoAdicional;
         return acc + precoTotal * item.quantidade;
@@ -122,7 +122,7 @@ export class SalesService {
 
     if (variacaoId) {
       const variacao = await this.salesRepository.findVariacaoById(variacaoId);
-      if (!variacao || variacao.produto_id !== produtoId) {
+      if (variacao?.produto_id !== produtoId) {
         throw new NotFoundException('Variação não encontrada');
       }
     }
@@ -258,13 +258,25 @@ export class SalesService {
     busca?: string;
     pagina?: number;
     limite?: number;
+    usuarioId?: string;
+    usuarioTipo?: string;
   }) {
-    const { categoriaId, busca, pagina = 1, limite = 20 } = params;
+    const {
+      categoriaId,
+      busca,
+      pagina = 1,
+      limite = 20,
+      usuarioId,
+      usuarioTipo,
+    } = params;
     const skip = (pagina - 1) * limite;
+
+    const vendedorId = usuarioTipo === 'vendedor' ? usuarioId : undefined;
 
     const [produtos, total] = await this.salesRepository.findProdutos({
       categoriaId,
       busca,
+      vendedorId,
       skip,
       take: limite,
     });
@@ -296,7 +308,7 @@ export class SalesService {
           })),
           imagens: imagens.map((i) => ({
             id: i.id,
-            url: 'http://163.176.133.251:3000' + i.url,
+            url: i.url,
             tipo: i.tipo,
             legenda: i.legenda,
           })),
@@ -313,10 +325,19 @@ export class SalesService {
     };
   }
 
-  async obterProduto(produtoId: string) {
+  async obterProduto(
+    produtoId: string,
+    usuarioId?: string,
+    usuarioTipo?: string,
+  ) {
     const produto = await this.salesRepository.findProdutoById(produtoId);
 
     if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    // Se o usuário for vendedor, verificar se o produto pertence a ele
+    if (usuarioTipo === 'vendedor' && produto.vendedorId !== usuarioId) {
       throw new NotFoundException('Produto não encontrado');
     }
 
@@ -347,7 +368,7 @@ export class SalesService {
       })),
       imagens: imagens.map((i) => ({
         id: i.id,
-        url: 'http://163.176.133.251:3000' + i.url,
+        url: i.url,
         tipo: i.tipo,
         legenda: i.legenda,
       })),
@@ -472,8 +493,8 @@ export class SalesService {
       avaliacaoMedia: '0.00',
       totalAvaliacoes: 0,
       tags: tags || '',
-      ativo: ativo !== undefined ? ativo : true,
-      destaque: destaque !== undefined ? destaque : false,
+      ativo: ativo ?? true,
+      destaque: destaque ?? false,
     });
 
     return produto;
@@ -495,7 +516,7 @@ export class SalesService {
       slug,
       icone: icone || '',
       cor_hex: corHex || '#000000',
-      ordem: ordem !== undefined ? ordem : 0,
+      ordem: ordem ?? 0,
       categoria_pai_id: categoriaPaiId || null,
       ativo: true,
     });
@@ -562,12 +583,27 @@ export class SalesService {
     return { message: 'Categoria excluída com sucesso' };
   }
 
-  async criarVariacao(payload: CriarVariacaoDto) {
-    const { produtoId, tipo, valor, sku, precoAdicional, estoque, ordem } =
-      payload;
+  async criarVariacao(
+    payload: CriarVariacaoDto & { usuarioId?: string; usuarioTipo?: string },
+  ) {
+    const {
+      produtoId,
+      tipo,
+      valor,
+      sku,
+      precoAdicional,
+      estoque,
+      ordem,
+      usuarioId,
+      usuarioTipo,
+    } = payload;
 
     const produto = await this.salesRepository.findProdutoById(produtoId);
     if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    if (usuarioTipo === 'vendedor' && produto.vendedorId !== usuarioId) {
       throw new NotFoundException('Produto não encontrado');
     }
 
@@ -583,13 +619,24 @@ export class SalesService {
       sku,
       preco_adicional: precoAdicional ? precoAdicional.toString() : '0.00',
       estoque,
-      ordem: ordem !== undefined ? ordem : 0,
+      ordem: ordem ?? 0,
     });
 
     return variacao;
   }
 
-  async listarVariacoesProduto(produtoId: string) {
+  async listarVariacoesProduto(
+    produtoId: string,
+    usuarioId?: string,
+    usuarioTipo?: string,
+  ) {
+    if (usuarioTipo === 'vendedor') {
+      const produto = await this.salesRepository.findProdutoById(produtoId);
+      if (produto?.vendedorId !== usuarioId) {
+        throw new NotFoundException('Produto não encontrado');
+      }
+    }
+
     const variacoes =
       await this.salesRepository.findAllVariacoesByProduto(produtoId);
     return {
@@ -598,20 +645,45 @@ export class SalesService {
     };
   }
 
-  async obterVariacao(id: string) {
+  async obterVariacao(id: string, usuarioId?: string, usuarioTipo?: string) {
     const variacao = await this.salesRepository.findVariacaoById(id);
     if (!variacao) {
       throw new NotFoundException('Variação não encontrada');
     }
+
+    if (usuarioTipo === 'vendedor') {
+      const produto = await this.salesRepository.findProdutoById(
+        variacao.produto_id,
+      );
+      if (produto?.vendedorId !== usuarioId) {
+        throw new NotFoundException('Variação não encontrada');
+      }
+    }
+
     return variacao;
   }
 
-  async atualizarVariacao(payload: AtualizarVariacaoDto & { id: string }) {
-    const { id, sku, ...data } = payload;
+  async atualizarVariacao(
+    payload: AtualizarVariacaoDto & {
+      id: string;
+      usuarioId?: string;
+      usuarioTipo?: string;
+    },
+  ) {
+    const { id, sku, usuarioId, usuarioTipo, ...data } = payload;
 
     const variacao = await this.salesRepository.findVariacaoById(id);
     if (!variacao) {
       throw new NotFoundException('Variação não encontrada');
+    }
+
+    if (usuarioTipo === 'vendedor') {
+      const produto = await this.salesRepository.findProdutoById(
+        variacao.produto_id,
+      );
+      if (produto?.vendedorId !== usuarioId) {
+        throw new NotFoundException('Variação não encontrada');
+      }
     }
 
     if (sku && sku !== variacao.sku) {
@@ -635,10 +707,19 @@ export class SalesService {
     return this.salesRepository.findVariacaoById(id);
   }
 
-  async excluirVariacao(id: string) {
+  async excluirVariacao(id: string, usuarioId?: string, usuarioTipo?: string) {
     const variacao = await this.salesRepository.findVariacaoById(id);
     if (!variacao) {
       throw new NotFoundException('Variação não encontrada');
+    }
+
+    if (usuarioTipo === 'vendedor') {
+      const produto = await this.salesRepository.findProdutoById(
+        variacao.produto_id,
+      );
+      if (produto?.vendedorId !== usuarioId) {
+        throw new NotFoundException('Variação não encontrada');
+      }
     }
 
     await this.salesRepository.deleteVariacao(id);
@@ -654,12 +735,19 @@ export class SalesService {
         size: number;
         buffer: Buffer;
       };
+      usuarioId?: string;
+      usuarioTipo?: string;
     },
   ) {
-    const { produtoId, tipo, legenda, ordem, file } = payload;
+    const { produtoId, tipo, legenda, ordem, file, usuarioId, usuarioTipo } =
+      payload;
 
     const produto = await this.salesRepository.findProdutoById(produtoId);
     if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    if (usuarioTipo === 'vendedor' && produto.vendedorId !== usuarioId) {
       throw new NotFoundException('Produto não encontrado');
     }
 
@@ -694,10 +782,10 @@ export class SalesService {
     const url = await this.storageService.saveFile(fileData, produtoId);
     const imagem = await this.salesRepository.createImagem({
       produto_id: produtoId,
-      url,
+      url: 'http://163.176.133.251:3000' + url,
       tipo,
       legenda: legenda || null,
-      ordem: ordem !== undefined ? ordem : 0,
+      ordem: ordem ?? 0,
     });
 
     return {
@@ -707,7 +795,18 @@ export class SalesService {
     };
   }
 
-  async listarImagensProduto(produtoId: string) {
+  async listarImagensProduto(
+    produtoId: string,
+    usuarioId?: string,
+    usuarioTipo?: string,
+  ) {
+    if (usuarioTipo === 'vendedor') {
+      const produto = await this.salesRepository.findProdutoById(produtoId);
+      if (produto?.vendedorId !== usuarioId) {
+        throw new NotFoundException('Produto não encontrado');
+      }
+    }
+
     const imagens =
       await this.salesRepository.findAllImagensByProduto(produtoId);
     return {
@@ -716,10 +815,19 @@ export class SalesService {
     };
   }
 
-  async excluirImagem(id: string) {
+  async excluirImagem(id: string, usuarioId?: string, usuarioTipo?: string) {
     const imagem = await this.salesRepository.findImagemById(id);
     if (!imagem) {
       throw new NotFoundException('Imagem não encontrada');
+    }
+
+    if (usuarioTipo === 'vendedor') {
+      const produto = await this.salesRepository.findProdutoById(
+        imagem.produto_id,
+      );
+      if (produto?.vendedorId !== usuarioId) {
+        throw new NotFoundException('Imagem não encontrada');
+      }
     }
 
     await this.storageService.deleteFile(imagem.url);

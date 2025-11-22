@@ -24,15 +24,13 @@ export class JwtAuthGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    if (isPublic) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest();
-
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
+      if (isPublic) {
+        return true;
+      }
       throw new UnauthorizedException();
     }
 
@@ -44,8 +42,12 @@ export class JwtAuthGuard implements CanActivate {
 
       request['user'] = await this.authRepository.findUserById(payload.sub);
     } catch {
+      if (isPublic) {
+        return true;
+      }
       throw new UnauthorizedException();
     }
+
     return true;
   }
 

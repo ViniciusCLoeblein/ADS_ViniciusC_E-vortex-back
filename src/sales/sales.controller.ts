@@ -31,6 +31,7 @@ import { CriarVariacaoDto } from './dto/criar-variacao.dto';
 import { AtualizarVariacaoDto } from './dto/atualizar-variacao.dto';
 import { UserRequest } from '../generics/decorators/user-in-request.decorator';
 import { Roles } from '../generics/decorators/roles.decorator';
+import { Public } from '../generics/decorators/public-decorator';
 import { UsuariosEntity } from '../entities/usuarios.entity';
 import {
   CarrinhoRes,
@@ -122,18 +123,28 @@ export class SalesController {
 
   @ApiOperation({ summary: 'Listar produtos' })
   @ApiOkResponse({ type: ProdutoListagemRes })
+  @Public()
   @Get('produtos')
   listarProdutos(
     @Query() query: ListarProdutosDto,
+    @UserRequest() user?: UsuariosEntity,
   ): Promise<ProdutoListagemRes> {
-    return this.salesService.listarProdutos(query);
+    return this.salesService.listarProdutos({
+      ...query,
+      usuarioId: user?.id,
+      usuarioTipo: user?.tipo,
+    });
   }
 
   @ApiOperation({ summary: 'Obter produto' })
   @ApiOkResponse({ type: ProdutoDetalheRes })
+  @Public()
   @Get('produtos/:id')
-  obterProduto(@Param('id') id: string): Promise<ProdutoDetalheRes> {
-    return this.salesService.obterProduto(id);
+  obterProduto(
+    @Param('id') id: string,
+    @UserRequest() user?: UsuariosEntity,
+  ): Promise<ProdutoDetalheRes> {
+    return this.salesService.obterProduto(id, user?.id, user?.tipo);
   }
 
   @ApiOperation({ summary: 'Listar favoritos' })
@@ -211,24 +222,41 @@ export class SalesController {
   @Roles('vendedor')
   @Post('variacoes')
   @HttpCode(201)
-  criarVariacao(@Body() body: CriarVariacaoDto): Promise<VariacaoRes> {
-    return this.salesService.criarVariacao(body);
+  criarVariacao(
+    @Body() body: CriarVariacaoDto,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<VariacaoRes> {
+    return this.salesService.criarVariacao({
+      ...body,
+      usuarioId: user.id,
+      usuarioTipo: user.tipo,
+    });
   }
 
   @ApiOperation({ summary: 'Listar variações de um produto' })
   @ApiOkResponse({ type: ListaVariacoesRes })
+  @Public()
   @Get('variacoes/produto/:produtoId')
   listarVariacoesProduto(
     @Param('produtoId') produtoId: string,
+    @UserRequest() user?: UsuariosEntity,
   ): Promise<ListaVariacoesRes> {
-    return this.salesService.listarVariacoesProduto(produtoId);
+    return this.salesService.listarVariacoesProduto(
+      produtoId,
+      user?.id,
+      user?.tipo,
+    );
   }
 
   @ApiOperation({ summary: 'Obter variação por ID' })
   @ApiOkResponse({ type: VariacaoRes })
+  @Public()
   @Get('variacoes/:id')
-  obterVariacao(@Param('id') id: string): Promise<VariacaoRes> {
-    return this.salesService.obterVariacao(id);
+  obterVariacao(
+    @Param('id') id: string,
+    @UserRequest() user?: UsuariosEntity,
+  ): Promise<VariacaoRes> {
+    return this.salesService.obterVariacao(id, user?.id, user?.tipo);
   }
 
   @ApiOperation({ summary: 'Atualizar variação' })
@@ -238,16 +266,25 @@ export class SalesController {
   atualizarVariacao(
     @Param('id') id: string,
     @Body() body: AtualizarVariacaoDto,
+    @UserRequest() user: UsuariosEntity,
   ): Promise<VariacaoRes> {
-    return this.salesService.atualizarVariacao({ id, ...body });
+    return this.salesService.atualizarVariacao({
+      id,
+      ...body,
+      usuarioId: user.id,
+      usuarioTipo: user.tipo,
+    });
   }
 
   @ApiOperation({ summary: 'Excluir variação' })
   @ApiOkResponse({ type: MessageRes })
   @Roles('vendedor')
   @Delete('variacoes/:id')
-  excluirVariacao(@Param('id') id: string): Promise<MessageRes> {
-    return this.salesService.excluirVariacao(id);
+  excluirVariacao(
+    @Param('id') id: string,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<MessageRes> {
+    return this.salesService.excluirVariacao(id, user.id, user.tipo);
   }
 
   @ApiOperation({ summary: 'Fazer upload de imagem do produto' })
@@ -276,6 +313,7 @@ export class SalesController {
   uploadImagem(
     @UploadedFile() file: MulterFile,
     @Body() body: CriarImagemDto,
+    @UserRequest() user: UsuariosEntity,
   ): Promise<ImagemUploadRes> {
     return this.salesService.uploadImagem({
       ...body,
@@ -285,23 +323,34 @@ export class SalesController {
         size: file.size,
         buffer: file.buffer,
       },
+      usuarioId: user.id,
+      usuarioTipo: user.tipo,
     });
   }
 
   @ApiOperation({ summary: 'Listar imagens de um produto' })
   @ApiOkResponse({ type: ListaImagensRes })
+  @Public()
   @Get('imagens/produto/:produtoId')
   listarImagensProduto(
     @Param('produtoId') produtoId: string,
+    @UserRequest() user?: UsuariosEntity,
   ): Promise<ListaImagensRes> {
-    return this.salesService.listarImagensProduto(produtoId);
+    return this.salesService.listarImagensProduto(
+      produtoId,
+      user?.id,
+      user?.tipo,
+    );
   }
 
   @ApiOperation({ summary: 'Excluir imagem' })
   @ApiOkResponse({ type: MessageRes })
   @Roles('vendedor')
   @Delete('imagens/:id')
-  excluirImagem(@Param('id') id: string): Promise<MessageRes> {
-    return this.salesService.excluirImagem(id);
+  excluirImagem(
+    @Param('id') id: string,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<MessageRes> {
+    return this.salesService.excluirImagem(id, user.id, user.tipo);
   }
 }

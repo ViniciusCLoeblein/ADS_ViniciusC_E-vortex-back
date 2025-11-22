@@ -13,19 +13,19 @@ import { Repository, Like, FindOptionsWhere } from 'typeorm';
 export class SalesRepository {
   constructor(
     @InjectRepository(CarrinhosEntity)
-    private carrinhosRepository: Repository<CarrinhosEntity>,
+    private readonly carrinhosRepository: Repository<CarrinhosEntity>,
     @InjectRepository(ItensCarrinhoEntity)
-    private itensCarrinhoRepository: Repository<ItensCarrinhoEntity>,
+    private readonly itensCarrinhoRepository: Repository<ItensCarrinhoEntity>,
     @InjectRepository(ProdutosEntity)
-    private produtosRepository: Repository<ProdutosEntity>,
+    private readonly produtosRepository: Repository<ProdutosEntity>,
     @InjectRepository(VariacoesProdutoEntity)
-    private variacoesRepository: Repository<VariacoesProdutoEntity>,
+    private readonly variacoesRepository: Repository<VariacoesProdutoEntity>,
     @InjectRepository(ImagensProdutoEntity)
-    private imagensRepository: Repository<ImagensProdutoEntity>,
+    private readonly imagensRepository: Repository<ImagensProdutoEntity>,
     @InjectRepository(FavoritosEntity)
-    private favoritosRepository: Repository<FavoritosEntity>,
+    private readonly favoritosRepository: Repository<FavoritosEntity>,
     @InjectRepository(CategoriasEntity)
-    private categoriasRepository: Repository<CategoriasEntity>,
+    private readonly categoriasRepository: Repository<CategoriasEntity>,
   ) {}
 
   async findCarrinhoByUsuario(
@@ -107,14 +107,19 @@ export class SalesRepository {
   async findProdutos(params: {
     categoriaId?: string;
     busca?: string;
+    vendedorId?: string;
     skip: number;
     take: number;
   }): Promise<[ProdutosEntity[], number]> {
-    const { categoriaId, busca, skip, take } = params;
+    const { categoriaId, busca, vendedorId, skip, take } = params;
     const where: FindOptionsWhere<ProdutosEntity> = { ativo: true };
 
     if (categoriaId) {
       where.categoriaId = categoriaId;
+    }
+
+    if (vendedorId) {
+      where.vendedorId = vendedorId;
     }
 
     if (busca) {

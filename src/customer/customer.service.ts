@@ -17,6 +17,7 @@ import { MessageResponse } from './types/response.types';
 import { CriarPedidoDto } from './dto/criar-pedido.dto';
 import { PedidoDetalheRes } from './types/customer.types';
 import { ProdutosEntity } from '../entities/produtos.entity';
+import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 
 @Injectable()
 export class CustomerService {
@@ -366,7 +367,21 @@ export class CustomerService {
     };
   }
 
-  async listarPedidos(usuarioId: string) {
+  async listarPedidos(usuarioId: string, usuarioTipo: string) {
+    if (usuarioTipo === 'vendedor') {
+      const vendedor =
+        await this.customerRepository.findVendedorByUsuarioId(usuarioId);
+      if (vendedor) {
+        const pedidos = await this.customerRepository.findPedidosByVendedor(
+          vendedor.usuario_id,
+        );
+        return {
+          pedidos,
+          total: pedidos.length,
+        };
+      }
+    }
+
     const pedidos =
       await this.customerRepository.findPedidosByUsuario(usuarioId);
     return {
@@ -375,16 +390,43 @@ export class CustomerService {
     };
   }
 
-  async obterPedido(id: string, usuarioId: string) {
+  async obterPedido(id: string, usuarioId: string, usuarioTipo: string) {
     const pedido = await this.customerRepository.findPedidoById(id);
     if (!pedido) {
       throw new NotFoundException('Pedido não encontrado');
     }
-    if (pedido.usuario_id !== usuarioId) {
-      throw new ForbiddenException('Acesso negado');
-    }
 
-    const itens = await this.customerRepository.findItensPedido(id);
+    let itens: ItensPedidoEntity[];
+
+    if (usuarioTipo === 'vendedor') {
+      const vendedor =
+        await this.customerRepository.findVendedorByUsuarioId(usuarioId);
+      if (vendedor) {
+        const pedidosVendedor =
+          await this.customerRepository.findPedidosByVendedor(
+            vendedor.usuario_id,
+          );
+        const pedidoPertenceAoVendedor = pedidosVendedor.some(
+          (p) => p.id === pedido.id,
+        );
+
+        if (!pedidoPertenceAoVendedor) {
+          throw new ForbiddenException('Acesso negado');
+        }
+
+        itens = await this.customerRepository.findItensPedidoByVendedor(
+          id,
+          vendedor.usuario_id,
+        );
+      } else {
+        throw new ForbiddenException('Acesso negado');
+      }
+    } else {
+      if (pedido.usuario_id !== usuarioId) {
+        throw new ForbiddenException('Acesso negado');
+      }
+      itens = await this.customerRepository.findItensPedido(id);
+    }
 
     return {
       ...pedido,

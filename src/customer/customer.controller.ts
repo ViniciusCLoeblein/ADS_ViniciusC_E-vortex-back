@@ -169,7 +169,7 @@ export class CustomerController {
   @ApiOkResponse({ type: ListaPedidosRes })
   @Get('pedidos')
   listarPedidos(@UserRequest() user: UsuariosEntity): Promise<ListaPedidosRes> {
-    return this.customerService.listarPedidos(user.id);
+    return this.customerService.listarPedidos(user.id, user.tipo);
   }
 
   @ApiOperation({ summary: 'Obter detalhes do pedido' })
@@ -179,6 +179,6 @@ export class CustomerController {
     @Param('id') id: string,
     @UserRequest() user: UsuariosEntity,
   ): Promise<PedidoDetalheRes> {
-    return this.customerService.obterPedido(id, user.id);
+    return this.customerService.obterPedido(id, user.id, user.tipo);
   }
 }

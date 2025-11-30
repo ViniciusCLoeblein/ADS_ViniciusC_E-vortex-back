@@ -870,7 +870,6 @@ export class SalesService {
       throw new NotFoundException('Pedido não encontrado');
     }
 
-    // Verificar se o usuário tem permissão para alterar este pedido
     if (usuarioTipo === 'vendedor') {
       const itens =
         await this.salesRepository.findItensPedidoByPedidoId(pedidoId);
@@ -878,7 +877,6 @@ export class SalesService {
       const produtos =
         await this.salesRepository.findProdutosByIds(produtosIds);
 
-      // Verificar se pelo menos um produto pertence ao vendedor
       const temProdutoDoVendedor = produtos.some(
         (produto) => produto.vendedorId === usuarioId,
       );
@@ -888,11 +886,14 @@ export class SalesService {
           'Você não tem permissão para alterar este pedido',
         );
       }
-    } else if (usuarioTipo !== 'admin') {
-      throw new ForbiddenException('Acesso negado');
     }
 
-    // Validações de transição de status
+    if (pedido.usuario_id !== usuarioId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para alterar este pedido',
+      );
+    }
+
     const statusAtual = pedido.status;
     const statusValidos: Record<string, string[]> = {
       pendente: ['pago', 'cancelado'],
@@ -909,7 +910,6 @@ export class SalesService {
       );
     }
 
-    // Validações específicas por status
     if (status === 'enviado') {
       if (!codigoRastreamento) {
         throw new BadRequestException(
@@ -929,12 +929,10 @@ export class SalesService {
       );
     }
 
-    // Preparar dados de atualização
     const updateData: Partial<typeof pedido> = {
       status,
     };
 
-    // Atualizar datas conforme o status
     if (status === 'pago') {
       updateData.data_pagamento = new Date();
     } else if (status === 'enviado') {
@@ -1013,18 +1011,16 @@ export class SalesService {
         produtoId,
         usuarioId,
       );
-    if (avaliacaoExistente) {
-      throw new ConflictException('Você já avaliou este produto neste pedido');
-    }
 
     const avaliacao = await this.salesRepository.createAvaliacao({
+      id: avaliacaoExistente?.id || undefined,
       pedido_id: pedidoId,
       produto_id: produtoId,
       usuario_id: usuarioId,
       nota,
       titulo: titulo || null,
       comentario: comentario || null,
-      aprovada: null,
+      aprovada: true,
     });
 
     const avaliacoesAprovadas =
@@ -1057,17 +1053,26 @@ export class SalesService {
     const avaliacoes =
       await this.salesRepository.findAvaliacoesByProduto(produtoId);
 
+    // Busca os usuários que fizeram as avaliações
+    const usuarioIds = avaliacoes.map((av) => av.usuario_id);
+    const usuarios = await this.salesRepository.findUsuariosByIds(usuarioIds);
+    const usuariosMap = new Map(usuarios.map((u) => [u.id, u]));
+
     return {
-      avaliacoes: avaliacoes.map((av) => ({
-        id: av.id,
-        produtoId: av.produto_id,
-        nota: av.nota,
-        titulo: av.titulo,
-        comentario: av.comentario,
-        respostaVendedor: av.resposta_vendedor,
-        dataResposta: av.data_resposta,
-        criadoEm: av.criado_em,
-      })),
+      avaliacoes: avaliacoes.map((av) => {
+        const usuario = usuariosMap.get(av.usuario_id);
+        return {
+          id: av.id,
+          produtoId: av.produto_id,
+          nota: av.nota,
+          titulo: av.titulo,
+          comentario: av.comentario,
+          respostaVendedor: av.resposta_vendedor,
+          dataResposta: av.data_resposta,
+          criadoEm: av.criado_em,
+          usuarioNome: usuario?.nome || null,
+        };
+      }),
       total: avaliacoes.length,
     };
   }

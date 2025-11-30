@@ -28,8 +28,8 @@ export class UsuariosEntity {
   @Column({ name: 'senha_hash', type: 'varchar', length: 255 })
   senhaHash: string;
 
-  @Column({ type: 'varchar', length: 11, unique: true })
-  cpf: string;
+  @Column({ type: 'varchar', length: 11, unique: true, nullable: true })
+  cpf?: string;
 
   @Column({ type: 'varchar', length: 20 })
   tipo: string;

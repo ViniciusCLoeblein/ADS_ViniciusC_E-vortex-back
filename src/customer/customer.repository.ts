@@ -8,6 +8,7 @@ import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 import { ProdutosEntity } from '../entities/produtos.entity';
 import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 import { UsuariosEntity } from '../entities/usuarios.entity';
+import { VendedoresEntity } from '../entities/vendedores.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -29,6 +30,8 @@ export class CustomerRepository {
     private readonly produtosRepository: Repository<ProdutosEntity>,
     @InjectRepository(VariacoesProdutoEntity)
     private readonly variacoesRepository: Repository<VariacoesProdutoEntity>,
+    @InjectRepository(VendedoresEntity)
+    private readonly vendedoresRepository: Repository<VendedoresEntity>,
   ) {}
 
   async createEndereco(
@@ -124,6 +127,25 @@ export class CustomerRepository {
     });
   }
 
+  async findVendedorByUsuarioId(
+    usuarioId: string,
+  ): Promise<VendedoresEntity | null> {
+    return this.vendedoresRepository.findOne({
+      where: { usuario_id: usuarioId },
+    });
+  }
+
+  async findPedidosByVendedor(vendedorId: string): Promise<PedidosEntity[]> {
+    return this.pedidosRepository
+      .createQueryBuilder('pedido')
+      .innerJoin('itens_pedido', 'item', 'item.pedido_id = pedido.id')
+      .innerJoin('produtos', 'produto', 'produto.id = item.produto_id')
+      .where('produto.vendedor_id = :vendedorId', { vendedorId })
+      .groupBy('pedido.id')
+      .orderBy('pedido.criado_em', 'DESC')
+      .getMany();
+  }
+
   async findPedidoById(id: string): Promise<PedidosEntity | null> {
     return this.pedidosRepository.findOne({ where: { id } });
   }
@@ -132,6 +154,19 @@ export class CustomerRepository {
     return this.itensPedidoRepository.find({
       where: { pedido_id: pedidoId },
     });
+  }
+
+  async findItensPedidoByVendedor(
+    pedidoId: string,
+    vendedorId: string,
+  ): Promise<ItensPedidoEntity[]> {
+    // Busca apenas os itens do pedido que pertencem aos produtos deste vendedor
+    return this.itensPedidoRepository
+      .createQueryBuilder('item')
+      .innerJoin('produtos', 'produto', 'produto.id = item.produto_id')
+      .where('item.pedido_id = :pedidoId', { pedidoId })
+      .andWhere('produto.vendedor_id = :vendedorId', { vendedorId })
+      .getMany();
   }
 
   async findUsuarioById(id: string): Promise<UsuariosEntity | null> {

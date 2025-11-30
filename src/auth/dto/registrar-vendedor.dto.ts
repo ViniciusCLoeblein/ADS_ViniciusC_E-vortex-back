@@ -40,17 +40,6 @@ export class RegistrarVendedorDto {
   @MinLength(6)
   senha: string;
 
-  @ApiProperty({
-    description: 'CPF do vendedor (apenas números)',
-    example: '12345678901',
-  })
-  @IsNotEmpty()
-  @IsString()
-  @Matches(/^\d{11}$/, {
-    message: 'CPF deve conter 11 dígitos',
-  })
-  cpf: string;
-
   @ApiPropertyOptional({
     description: 'Telefone do vendedor',
     example: '51999999999',

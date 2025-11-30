@@ -17,6 +17,7 @@ import { VendedoresEntity } from '../entities/vendedores.entity';
 import { PedidosEntity } from '../entities/pedidos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
+import { UsuariosEntity } from '../entities/usuarios.entity';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
       PedidosEntity,
       ItensPedidoEntity,
       AvaliacoesEntity,
+      UsuariosEntity,
     ]),
   ],
   controllers: [SalesController],

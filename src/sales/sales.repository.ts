@@ -11,6 +11,7 @@ import { VendedoresEntity } from '../entities/vendedores.entity';
 import { PedidosEntity } from '../entities/pedidos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
+import { UsuariosEntity } from '../entities/usuarios.entity';
 import { Repository, Like, FindOptionsWhere, In } from 'typeorm';
 
 @Injectable()
@@ -38,6 +39,8 @@ export class SalesRepository {
     private readonly itensPedidoRepository: Repository<ItensPedidoEntity>,
     @InjectRepository(AvaliacoesEntity)
     private readonly avaliacoesRepository: Repository<AvaliacoesEntity>,
+    @InjectRepository(UsuariosEntity)
+    private readonly usuariosRepository: Repository<UsuariosEntity>,
   ) {}
 
   async findCarrinhoByUsuario(
@@ -386,6 +389,13 @@ export class SalesRepository {
     return this.avaliacoesRepository.find({
       where: { produto_id: produtoId, aprovada: true },
       order: { criado_em: 'DESC' },
+    });
+  }
+
+  async findUsuariosByIds(ids: string[]): Promise<UsuariosEntity[]> {
+    if (ids.length === 0) return [];
+    return this.usuariosRepository.find({
+      where: { id: In(ids) },
     });
   }
 

@@ -102,7 +102,6 @@ export class AuthService {
     nome: string;
     email: string;
     senha: string;
-    cpf: string;
     telefone?: string;
     cnpj: string;
     razaoSocial: string;
@@ -120,7 +119,6 @@ export class AuthService {
       nome,
       email,
       senha,
-      cpf,
       telefone,
       cnpj,
       razaoSocial,
@@ -129,15 +127,9 @@ export class AuthService {
       contaBancaria,
     } = payload;
 
-    const [existingByEmail, existingByCpf] = await Promise.all([
-      this.authRepository.findUserByEmail(email),
-      this.authRepository.findUserByCpf(cpf),
-    ]);
-
-    if (existingByEmail || existingByCpf) {
-      throw new BadRequestException(
-        existingByEmail ? 'Email já cadastrado' : 'CPF já cadastrado',
-      );
+    const existingByEmail = await this.authRepository.findUserByEmail(email);
+    if (existingByEmail) {
+      throw new BadRequestException('Email já cadastrado');
     }
 
     const existingByCnpj = await this.authRepository.findVendedorByCnpj(cnpj);
@@ -151,11 +143,11 @@ export class AuthService {
       nome,
       email,
       senhaHash,
-      cpf,
       tipo: 'vendedor',
       telefone: telefone ?? null,
       avatarUrl: null,
       dataNascimento: null,
+      cpf: null,
       aceitaMarketing: false,
       emailVerificado: false,
       ultimoLogin: null,

@@ -229,6 +229,13 @@ export class SalesRepository {
     return this.produtosRepository.findOne({ where: { sku } });
   }
 
+  async updateProduto(
+    id: string,
+    data: Partial<ProdutosEntity>,
+  ): Promise<void> {
+    await this.produtosRepository.update(id, data);
+  }
+
   async createCategoria(
     categoria: Partial<CategoriasEntity>,
   ): Promise<CategoriasEntity> {

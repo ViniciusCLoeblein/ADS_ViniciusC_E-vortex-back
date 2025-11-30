@@ -15,6 +15,7 @@ import { CategoriasEntity } from '../entities/categorias.entity';
 import { StorageService } from '../generics/storage/storage.service';
 import { MulterFile } from '../generics/types/multer.types';
 import { CriarProdutoDto } from './dto/criar-produto.dto';
+import { AtualizarProdutoDto } from './dto/atualizar-produto.dto';
 import { CriarCategoriaDto } from './dto/criar-categoria.dto';
 import { AtualizarCategoriaDto } from './dto/atualizar-categoria.dto';
 import { CriarVariacaoDto } from './dto/criar-variacao.dto';
@@ -24,6 +25,7 @@ import { CriarCupomDto } from './dto/criar-cupom.dto';
 import { AtualizarCupomDto } from './dto/atualizar-cupom.dto';
 import { CuponsEntity } from '../entities/cupons.entity';
 import { PedidosEntity } from '../entities/pedidos.entity';
+import { ProdutosEntity } from '../entities/produtos.entity';
 import { NotificationsExpoService } from '../notifications-expo/notifications-expo.service';
 
 @Injectable()
@@ -448,6 +450,92 @@ export class SalesService {
     });
 
     return produto;
+  }
+
+  async atualizarProduto(
+    produtoId: string,
+    payload: AtualizarProdutoDto,
+    usuarioId: string,
+  ) {
+    const produto = await this.salesRepository.findProdutoById(produtoId);
+    if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    // Verificar se o usuário é o vendedor do produto
+    if (produto.vendedorId !== usuarioId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para atualizar este produto',
+      );
+    }
+
+    // Se SKU foi alterado, verificar se já existe
+    if (payload.sku && payload.sku !== produto.sku) {
+      const skuExistente = await this.salesRepository.findProdutoBySku(
+        payload.sku,
+      );
+      if (skuExistente) {
+        throw new ConflictException('SKU já cadastrado');
+      }
+    }
+
+    const updateData: Partial<ProdutosEntity> = {};
+
+    if (payload.categoriaId !== undefined) {
+      updateData.categoriaId = payload.categoriaId;
+    }
+    if (payload.sku !== undefined) {
+      updateData.sku = payload.sku;
+    }
+    if (payload.nome !== undefined) {
+      updateData.nome = payload.nome;
+    }
+    if (payload.descricao !== undefined) {
+      updateData.descricao = payload.descricao;
+    }
+    if (payload.descricaoCurta !== undefined) {
+      updateData.descricaoCurta = payload.descricaoCurta;
+    }
+    if (payload.preco !== undefined) {
+      updateData.preco = payload.preco.toString();
+    }
+    if (payload.precoPromocional !== undefined) {
+      updateData.precoPromocional = payload.precoPromocional.toString();
+    }
+    if (payload.pesoKg !== undefined) {
+      updateData.pesoKg = payload.pesoKg.toString();
+    }
+    if (payload.alturaCm !== undefined) {
+      updateData.alturaCm = payload.alturaCm.toString();
+    }
+    if (payload.larguraCm !== undefined) {
+      updateData.larguraCm = payload.larguraCm.toString();
+    }
+    if (payload.profundidadeCm !== undefined) {
+      updateData.profundidadeCm = payload.profundidadeCm.toString();
+    }
+    if (payload.estoque !== undefined) {
+      updateData.estoque = payload.estoque;
+    }
+    if (payload.estoqueMinimo !== undefined) {
+      updateData.estoqueMinimo = payload.estoqueMinimo;
+    }
+    if (payload.tags !== undefined) {
+      updateData.tags = payload.tags;
+    }
+    if (payload.destaque !== undefined) {
+      updateData.destaque = payload.destaque;
+    }
+    if (payload.ativo !== undefined) {
+      updateData.ativo = payload.ativo;
+    }
+
+    await this.salesRepository.updateProduto(produtoId, updateData);
+
+    const produtoAtualizado =
+      await this.salesRepository.findProdutoById(produtoId);
+
+    return produtoAtualizado;
   }
 
   async criarCategoria(payload: CriarCategoriaDto) {

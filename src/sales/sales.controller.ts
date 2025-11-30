@@ -25,6 +25,7 @@ import { AdicionarItemCarrinhoDto } from './dto/adicionar-item-carrinho.dto';
 import { AtualizarItemCarrinhoDto } from './dto/atualizar-item-carrinho.dto';
 import { ListarProdutosDto } from './dto/listar-produtos.dto';
 import { CriarProdutoDto } from './dto/criar-produto.dto';
+import { AtualizarProdutoDto } from './dto/atualizar-produto.dto';
 import { CriarCategoriaDto } from './dto/criar-categoria.dto';
 import { AtualizarCategoriaDto } from './dto/atualizar-categoria.dto';
 import { CriarVariacaoDto } from './dto/criar-variacao.dto';
@@ -130,6 +131,18 @@ export class SalesController {
     @UserRequest() user: UsuariosEntity,
   ): Promise<ProdutoCriadoRes> {
     return this.salesService.criarProduto({ ...body, usuarioId: user.id });
+  }
+
+  @ApiOperation({ summary: 'Atualizar produto' })
+  @ApiOkResponse({ type: ProdutoCriadoRes })
+  @Roles('vendedor')
+  @Put('produtos/:id')
+  atualizarProduto(
+    @Param('id') id: string,
+    @Body() body: AtualizarProdutoDto,
+    @UserRequest() user: UsuariosEntity,
+  ): Promise<ProdutoCriadoRes> {
+    return this.salesService.atualizarProduto(id, body, user.id);
   }
 
   @ApiOperation({ summary: 'Listar produtos' })

@@ -135,6 +135,10 @@ export class CustomerRepository {
     });
   }
 
+  async findVendedorById(id: string): Promise<VendedoresEntity | null> {
+    return this.vendedoresRepository.findOne({ where: { id } });
+  }
+
   async findPedidosByVendedor(vendedorId: string): Promise<PedidosEntity[]> {
     return this.pedidosRepository
       .createQueryBuilder('pedido')

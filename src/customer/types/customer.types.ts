@@ -197,6 +197,11 @@ export class PedidoDetalheRes extends PedidoRes {
   itens: ItemPedidoRes[];
 }
 
+export class PedidosCriadosRes {
+  @ApiProperty({ type: [PedidoDetalheRes] })
+  pedidos: PedidoDetalheRes[];
+}
+
 export class MessageRes {
   @ApiProperty()
   message: string;

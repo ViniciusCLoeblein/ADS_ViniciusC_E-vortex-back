@@ -11,6 +11,7 @@ import { randomUUID } from 'crypto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { AtualizarPushTokenDto } from './dto/atualizar-push-token.dto';
 import { AuthTokenResponse, TestResponse } from './types/auth.types';
 import { UsuariosEntity } from '../entities/usuarios.entity';
 import { VendedoresEntity } from '../entities/vendedores.entity';
@@ -195,5 +196,13 @@ export class AuthService {
       telefone: user.telefone || '',
       token,
     };
+  }
+
+  async atualizarPushToken(usuarioId: string, pushToken: string) {
+    await this.authRepository.updateUser(usuarioId, {
+      pushToken,
+    });
+
+    return { message: 'Push token atualizado com sucesso' };
   }
 }

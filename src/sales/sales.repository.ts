@@ -12,6 +12,7 @@ import { PedidosEntity } from '../entities/pedidos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
 import { UsuariosEntity } from '../entities/usuarios.entity';
+import { CuponsEntity } from '../entities/cupons.entity';
 import { Repository, Like, FindOptionsWhere, In } from 'typeorm';
 
 @Injectable()
@@ -41,6 +42,8 @@ export class SalesRepository {
     private readonly avaliacoesRepository: Repository<AvaliacoesEntity>,
     @InjectRepository(UsuariosEntity)
     private readonly usuariosRepository: Repository<UsuariosEntity>,
+    @InjectRepository(CuponsEntity)
+    private readonly cuponsRepository: Repository<CuponsEntity>,
   ) {}
 
   async findCarrinhoByUsuario(
@@ -332,12 +335,20 @@ export class SalesRepository {
 
   async findVendedorById(id: string): Promise<VendedoresEntity | null> {
     return this.vendedoresRepository.findOne({
-      where: { id, status: 'aprovado' },
+      where: { id },
     });
   }
 
   async findVendedorByUsuarioId(id: string): Promise<VendedoresEntity | null> {
     return this.vendedoresRepository.findOne({ where: { usuario_id: id } });
+  }
+
+  async findVendedorByIdRaw(id: string): Promise<VendedoresEntity | null> {
+    return this.vendedoresRepository.findOne({ where: { id } });
+  }
+
+  async findUsuarioById(id: string): Promise<UsuariosEntity | null> {
+    return this.usuariosRepository.findOne({ where: { id } });
   }
 
   async findPedidoById(id: string): Promise<PedidosEntity | null> {
@@ -426,5 +437,55 @@ export class SalesRepository {
       avaliacaoMedia,
       totalAvaliacoes,
     });
+  }
+
+  // Métodos para Cupons
+  async createCupom(cupom: Partial<CuponsEntity>): Promise<CuponsEntity> {
+    return this.cuponsRepository.save(cupom);
+  }
+
+  async findCupomById(id: string): Promise<CuponsEntity | null> {
+    return this.cuponsRepository.findOne({ where: { id } });
+  }
+
+  async findCupomByCodigo(codigo: string): Promise<CuponsEntity | null> {
+    return this.cuponsRepository.findOne({ where: { codigo } });
+  }
+
+  async findAllCupons(): Promise<CuponsEntity[]> {
+    return this.cuponsRepository.find({
+      order: { criado_em: 'DESC' },
+    });
+  }
+
+  async updateCupom(id: string, data: Partial<CuponsEntity>): Promise<void> {
+    await this.cuponsRepository.update(id, data);
+  }
+
+  async deleteCupom(id: string): Promise<void> {
+    await this.cuponsRepository.delete(id);
+  }
+
+  // Método para calcular total de vendas do vendedor
+  async getTotalVendasVendedor(vendedorId: string): Promise<{
+    totalVendas: string;
+    totalPedidos: number;
+  }> {
+    const resultado = await this.pedidosRepository
+      .createQueryBuilder('pedido')
+      .innerJoin('itens_pedido', 'item', 'item.pedido_id = pedido.id')
+      .innerJoin('produtos', 'produto', 'produto.id = item.produto_id')
+      .where('produto.vendedor_id = :vendedorId', { vendedorId })
+      .andWhere('pedido.status IN (:...statuses)', {
+        statuses: ['entregue', 'processando', 'enviado'],
+      })
+      .select('SUM(pedido.total)', 'totalVendas')
+      .addSelect('COUNT(DISTINCT pedido.id)', 'totalPedidos')
+      .getRawOne();
+
+    return {
+      totalVendas: resultado?.totalVendas || '0.00',
+      totalPedidos: parseInt(resultado?.totalPedidos || '0', 10),
+    };
   }
 }

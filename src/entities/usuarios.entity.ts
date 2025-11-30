@@ -52,6 +52,9 @@ export class UsuariosEntity {
   @Column({ name: 'ultimo_login', type: 'timestamp', nullable: true })
   ultimoLogin: Date;
 
+  @Column({ name: 'push_token', type: 'text', nullable: true })
+  pushToken: string | null;
+
   @CreateDateColumn({ name: 'criado_em', type: 'timestamp' })
   criadoEm: Date;
 

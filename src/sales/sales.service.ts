@@ -20,12 +20,18 @@ import { AtualizarCategoriaDto } from './dto/atualizar-categoria.dto';
 import { CriarVariacaoDto } from './dto/criar-variacao.dto';
 import { AtualizarVariacaoDto } from './dto/atualizar-variacao.dto';
 import { CriarImagemDto } from './dto/criar-imagem.dto';
+import { CriarCupomDto } from './dto/criar-cupom.dto';
+import { AtualizarCupomDto } from './dto/atualizar-cupom.dto';
+import { CuponsEntity } from '../entities/cupons.entity';
+import { PedidosEntity } from '../entities/pedidos.entity';
+import { NotificationsExpoService } from '../notifications-expo/notifications-expo.service';
 
 @Injectable()
 export class SalesService {
   constructor(
     private readonly salesRepository: SalesRepository,
     private readonly storageService: StorageService,
+    private readonly notificationsExpoService: NotificationsExpoService,
   ) {}
 
   async obterCarrinho(usuarioId?: string, sessaoId?: string) {
@@ -315,10 +321,14 @@ export class SalesService {
       throw new NotFoundException('Produto não encontrado');
     }
 
+    console.log('produto', produto);
+
     const favoritoExistente = await this.salesRepository.findFavorito(
       usuarioId,
       produtoId,
     );
+
+    console.log('favoritoExistente', favoritoExistente);
 
     if (favoritoExistente) {
       throw new BadRequestException('Produto já está nos favoritos');
@@ -358,13 +368,13 @@ export class SalesService {
       await this.salesRepository.findFavoritosByUsuario(usuarioId);
 
     const produtosIds = favoritos.map((f) => f.produto_id);
-    const produtos = await Promise.all(
-      produtosIds.map((id) => this.salesRepository.findProdutoById(id)),
-    );
+
+    const produtos = await this.salesRepository.findProdutosByIds(produtosIds);
+    const produtoMap = new Map(produtos.map((prod) => [prod.id, prod]));
 
     return {
-      favoritos: favoritos.map((f, index) => {
-        const produto = produtos[index];
+      favoritos: favoritos.map((f) => {
+        const produto = produtoMap.get(f.produto_id) || null;
         return {
           id: f.id,
           produtoId: f.produto_id,
@@ -888,7 +898,7 @@ export class SalesService {
       }
     }
 
-    if (pedido.usuario_id !== usuarioId) {
+    if (pedido.usuario_id !== usuarioId && usuarioTipo !== 'vendedor') {
       throw new ForbiddenException(
         'Você não tem permissão para alterar este pedido',
       );
@@ -954,6 +964,16 @@ export class SalesService {
     const pedidoAtualizado =
       await this.salesRepository.findPedidoById(pedidoId);
 
+    // Enviar notificações sobre mudança de status
+    this.enviarNotificacaoStatusPedido(
+      pedidoAtualizado,
+      statusAtual,
+      status,
+      usuarioTipo,
+    ).catch((error) => {
+      console.error('Erro ao enviar notificação de status:', error);
+    });
+
     return {
       id: pedidoAtualizado.id,
       uuid: pedidoAtualizado.uuid,
@@ -968,6 +988,90 @@ export class SalesService {
       motivoCancelamento: pedidoAtualizado.motivo_cancelamento,
       atualizadoEm: pedidoAtualizado.atualizado_em,
     };
+  }
+
+  private async enviarNotificacaoStatusPedido(
+    pedido: PedidosEntity,
+    statusAnterior: string,
+    novoStatus: string,
+    quemMudou: string,
+  ) {
+    // Buscar usuário que fez o pedido
+    const usuario = await this.salesRepository.findUsuarioById(
+      pedido.usuario_id,
+    );
+
+    // Buscar vendedores do pedido
+    const itens = await this.salesRepository.findItensPedidoByPedidoId(
+      pedido.id,
+    );
+    const produtosIds = itens.map((item) => item.produto_id);
+    const produtos = await this.salesRepository.findProdutosByIds(produtosIds);
+    const vendedoresIds = [
+      ...new Set(produtos.map((produto) => produto.vendedorId)),
+    ];
+
+    const statusMessages: Record<string, { title: string; body: string }> = {
+      processando: {
+        title: 'Pedido em processamento',
+        body: `Seu pedido #${pedido.id} está sendo processado`,
+      },
+      enviado: {
+        title: 'Pedido enviado!',
+        body: `Seu pedido #${pedido.id} foi enviado. Código de rastreamento: ${pedido.codigo_rastreamento || 'N/A'}`,
+      },
+      entregue: {
+        title: 'Pedido entregue!',
+        body: `Seu pedido #${pedido.id} foi entregue com sucesso!`,
+      },
+      cancelado: {
+        title: 'Pedido cancelado',
+        body: `Seu pedido #${pedido.id} foi cancelado. ${pedido.motivo_cancelamento ? `Motivo: ${pedido.motivo_cancelamento}` : ''}`,
+      },
+    };
+
+    const message = statusMessages[novoStatus];
+
+    if (!message) return;
+
+    // Se vendedor mudou o status, notificar o cliente
+    if (quemMudou === 'vendedor' && usuario?.pushToken) {
+      try {
+        await this.notificationsExpoService.sendNotification({
+          to: usuario.pushToken,
+          title: message.title,
+          body: message.body,
+          data: { pedidoId: pedido.id, status: novoStatus },
+        });
+      } catch (error) {
+        console.error('Erro ao notificar usuário:', error);
+      }
+    }
+
+    // Se cliente ou sistema mudou, notificar vendedores
+    if (quemMudou !== 'vendedor') {
+      for (const vendedorId of vendedoresIds) {
+        const vendedor =
+          await this.salesRepository.findVendedorByIdRaw(vendedorId);
+        if (vendedor) {
+          const usuarioVendedor = await this.salesRepository.findUsuarioById(
+            vendedor.usuario_id,
+          );
+          if (usuarioVendedor?.pushToken) {
+            try {
+              await this.notificationsExpoService.sendNotification({
+                to: usuarioVendedor.pushToken,
+                title: `Pedido #${pedido.id} - ${message.title}`,
+                body: `Status do pedido alterado para: ${novoStatus}`,
+                data: { pedidoId: pedido.id, status: novoStatus },
+              });
+            } catch (error) {
+              console.error('Erro ao notificar vendedor:', error);
+            }
+          }
+        }
+      }
+    }
   }
 
   async criarAvaliacao(
@@ -1025,9 +1129,15 @@ export class SalesService {
 
     const avaliacoesAprovadas =
       await this.salesRepository.findAvaliacoesByProduto(produtoId);
-    const totalAvaliacoes = avaliacoesAprovadas.length + 1;
-    const somaNotas =
-      avaliacoesAprovadas.reduce((acc, av) => acc + av.nota, 0) + nota;
+
+    const totalAvaliacoes = avaliacaoExistente
+      ? avaliacoesAprovadas.length
+      : avaliacoesAprovadas.length + 1;
+
+    const somaNotas = avaliacaoExistente
+      ? avaliacoesAprovadas.reduce((acc, av) => acc + av.nota, 0)
+      : avaliacoesAprovadas.reduce((acc, av) => acc + av.nota, 0) + nota;
+
     const novaMedia = (somaNotas / totalAvaliacoes).toFixed(2);
 
     await this.salesRepository.updateProdutoAvaliacao(
@@ -1074,6 +1184,190 @@ export class SalesService {
         };
       }),
       total: avaliacoes.length,
+    };
+  }
+
+  // Métodos para CRUD de Cupons
+  async criarCupom(payload: CriarCupomDto) {
+    const cupomExistente = await this.salesRepository.findCupomByCodigo(
+      payload.codigo,
+    );
+    if (cupomExistente) {
+      throw new BadRequestException('Código de cupom já existe');
+    }
+
+    const cupom = await this.salesRepository.createCupom({
+      codigo: payload.codigo,
+      descricao: payload.descricao,
+      tipo: payload.tipo,
+      valor: payload.valor.toFixed(2),
+      valor_minimo: payload.valorMinimo ? payload.valorMinimo.toFixed(2) : null,
+      usos_maximos: payload.usosMaximos || null,
+      usos_atuais: 0,
+      usuario_id: payload.usuarioId || null,
+      data_inicio: payload.dataInicio ? new Date(payload.dataInicio) : null,
+      data_expiracao: payload.dataExpiracao
+        ? new Date(payload.dataExpiracao)
+        : null,
+      ativo: payload.ativo !== undefined ? payload.ativo : true,
+    });
+
+    return {
+      id: cupom.id,
+      codigo: cupom.codigo,
+      descricao: cupom.descricao,
+      tipo: cupom.tipo,
+      valor: cupom.valor,
+      valorMinimo: cupom.valor_minimo,
+      usosMaximos: cupom.usos_maximos,
+      usosAtuais: cupom.usos_atuais,
+      usuarioId: cupom.usuario_id,
+      dataInicio: cupom.data_inicio,
+      dataExpiracao: cupom.data_expiracao,
+      ativo: cupom.ativo,
+      criadoEm: cupom.criado_em,
+      atualizadoEm: cupom.atualizado_em,
+    };
+  }
+
+  async listarCupons() {
+    const cupons = await this.salesRepository.findAllCupons();
+    return {
+      cupons: cupons.map((c) => ({
+        id: c.id,
+        codigo: c.codigo,
+        descricao: c.descricao,
+        tipo: c.tipo,
+        valor: c.valor,
+        valorMinimo: c.valor_minimo,
+        usosMaximos: c.usos_maximos,
+        usosAtuais: c.usos_atuais,
+        usuarioId: c.usuario_id,
+        dataInicio: c.data_inicio,
+        dataExpiracao: c.data_expiracao,
+        ativo: c.ativo,
+        criadoEm: c.criado_em,
+        atualizadoEm: c.atualizado_em,
+      })),
+      total: cupons.length,
+    };
+  }
+
+  async obterCupom(id: string) {
+    const cupom = await this.salesRepository.findCupomById(id);
+    if (!cupom) {
+      throw new NotFoundException('Cupom não encontrado');
+    }
+
+    return {
+      id: cupom.id,
+      codigo: cupom.codigo,
+      descricao: cupom.descricao,
+      tipo: cupom.tipo,
+      valor: cupom.valor,
+      valorMinimo: cupom.valor_minimo,
+      usosMaximos: cupom.usos_maximos,
+      usosAtuais: cupom.usos_atuais,
+      usuarioId: cupom.usuario_id,
+      dataInicio: cupom.data_inicio,
+      dataExpiracao: cupom.data_expiracao,
+      ativo: cupom.ativo,
+      criadoEm: cupom.criado_em,
+      atualizadoEm: cupom.atualizado_em,
+    };
+  }
+
+  async buscarCupomPorCodigo(codigo: string) {
+    const cupom = await this.salesRepository.findCupomByCodigo(codigo);
+    if (!cupom) {
+      throw new NotFoundException('Cupom não encontrado');
+    }
+
+    return {
+      id: cupom.id,
+      codigo: cupom.codigo,
+      descricao: cupom.descricao,
+      tipo: cupom.tipo,
+      valor: cupom.valor,
+      valorMinimo: cupom.valor_minimo,
+      usosMaximos: cupom.usos_maximos,
+      usosAtuais: cupom.usos_atuais,
+      usuarioId: cupom.usuario_id,
+      dataInicio: cupom.data_inicio,
+      dataExpiracao: cupom.data_expiracao,
+      ativo: cupom.ativo,
+      criadoEm: cupom.criado_em,
+      atualizadoEm: cupom.atualizado_em,
+    };
+  }
+
+  async atualizarCupom(id: string, payload: AtualizarCupomDto) {
+    const cupom = await this.salesRepository.findCupomById(id);
+    if (!cupom) {
+      throw new NotFoundException('Cupom não encontrado');
+    }
+
+    if (payload.codigo && payload.codigo !== cupom.codigo) {
+      const cupomExistente = await this.salesRepository.findCupomByCodigo(
+        payload.codigo,
+      );
+      if (cupomExistente) {
+        throw new BadRequestException('Código de cupom já existe');
+      }
+    }
+
+    const updateData: Partial<CuponsEntity> = {};
+    if (payload.codigo) updateData.codigo = payload.codigo;
+    if (payload.descricao) updateData.descricao = payload.descricao;
+    if (payload.tipo) updateData.tipo = payload.tipo;
+    if (payload.valor !== undefined)
+      updateData.valor = payload.valor.toFixed(2);
+    if (payload.valorMinimo !== undefined)
+      updateData.valor_minimo = payload.valorMinimo.toFixed(2);
+    if (payload.usosMaximos !== undefined)
+      updateData.usos_maximos = payload.usosMaximos;
+    if (payload.usuarioId !== undefined)
+      updateData.usuario_id = payload.usuarioId || null;
+    if (payload.dataInicio !== undefined)
+      updateData.data_inicio = payload.dataInicio
+        ? new Date(payload.dataInicio)
+        : null;
+    if (payload.dataExpiracao !== undefined)
+      updateData.data_expiracao = payload.dataExpiracao
+        ? new Date(payload.dataExpiracao)
+        : null;
+    if (payload.ativo !== undefined) updateData.ativo = payload.ativo;
+
+    await this.salesRepository.updateCupom(id, updateData);
+
+    return this.obterCupom(id);
+  }
+
+  async deletarCupom(id: string) {
+    const cupom = await this.salesRepository.findCupomById(id);
+    if (!cupom) {
+      throw new NotFoundException('Cupom não encontrado');
+    }
+
+    await this.salesRepository.deleteCupom(id);
+    return { message: 'Cupom deletado com sucesso' };
+  }
+
+  async getTotalVendasVendedor(vendedorId: string) {
+    const vendedor = await this.salesRepository.findVendedorById(vendedorId);
+    if (!vendedor) {
+      throw new NotFoundException('Vendedor não encontrado');
+    }
+
+    const resultado = await this.salesRepository.getTotalVendasVendedor(
+      vendedor.usuario_id,
+    );
+
+    return {
+      vendedorId: vendedor.id,
+      nomeFantasia: vendedor.nome_fantasia,
+      totalVendas: resultado.totalVendas,
+      totalPedidos: resultado.totalPedidos,
     };
   }
 }

@@ -18,10 +18,15 @@ import { CriarPedidoDto } from './dto/criar-pedido.dto';
 import { PedidoDetalheRes } from './types/customer.types';
 import { ProdutosEntity } from '../entities/produtos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
+import { NotificationsExpoService } from '../notifications-expo/notifications-expo.service';
+import { PedidosEntity } from 'src/entities/pedidos.entity';
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly customerRepository: CustomerRepository) {}
+  constructor(
+    private readonly customerRepository: CustomerRepository,
+    private readonly notificationsExpoService: NotificationsExpoService,
+  ) {}
 
   async criarEndereco(payload: CriarEnderecoPayload) {
     const {
@@ -238,7 +243,7 @@ export class CustomerService {
 
   async criarPedido(
     payload: CriarPedidoDto & { usuarioId: string },
-  ): Promise<PedidoDetalheRes> {
+  ): Promise<{ pedidos: PedidoDetalheRes[] }> {
     const {
       usuarioId,
       enderecoEntregaId,
@@ -267,15 +272,17 @@ export class CustomerService {
       }
     }
 
-    let subtotal = 0;
-
+    // Preparar itens e validar estoque
     const itensPreparados: Array<{
       produto: ProdutosEntity;
       variacaoId: string | null;
       quantidade: number;
       precoUnitario: number;
       variacaoDescricao: string | null;
+      vendedorId: string;
     }> = [];
+
+    let subtotalTotal = 0;
 
     for (const item of itens) {
       const produto = await this.customerRepository.findProdutoById(
@@ -318,7 +325,7 @@ export class CustomerService {
         });
       }
 
-      subtotal += precoUnitario * item.quantidade;
+      subtotalTotal += precoUnitario * item.quantidade;
 
       itensPreparados.push({
         produto,
@@ -326,45 +333,115 @@ export class CustomerService {
         quantidade: item.quantidade,
         precoUnitario,
         variacaoDescricao,
+        vendedorId: produto.vendedorId,
       });
     }
 
-    const total = subtotal - (desconto || 0) + (frete || 0);
+    // Agrupar itens por vendedor
+    const itensPorVendedor = new Map<
+      string,
+      Array<(typeof itensPreparados)[0]>
+    >();
 
-    const pedido = await this.customerRepository.createPedido({
-      uuid: randomUUID(),
-      usuario_id: usuarioId,
-      endereco_entrega_id: enderecoEntregaId,
-      cartao_credito_id: cartaoCreditoId || null,
-      status: 'processando',
-      subtotal: subtotal.toFixed(2),
-      desconto: (desconto || 0).toFixed(2),
-      frete: (frete || 0).toFixed(2),
-      total: total.toFixed(2),
-      metodo_pagamento: metodoPagamento,
-      dados_pagamento: null,
-    });
+    for (const item of itensPreparados) {
+      const vendedorId = item.vendedorId;
+      if (!itensPorVendedor.has(vendedorId)) {
+        itensPorVendedor.set(vendedorId, []);
+      }
+      itensPorVendedor.get(vendedorId)?.push(item);
+    }
 
-    await this.customerRepository.createItensPedido(
-      itensPreparados.map((i) => ({
-        pedido_id: pedido.id,
-        produto_id: i.produto.id,
-        variacao_id: i.variacaoId,
-        quantidade: i.quantidade,
-        preco_unitario: i.precoUnitario.toFixed(2),
-        nome_produto: i.produto.nome,
-        variacao_descricao: i.variacaoDescricao,
-      })),
-    );
+    // Calcular subtotal por vendedor
+    const subtotaisPorVendedor = new Map<string, number>();
+    for (const [vendedorId, itensVendedor] of itensPorVendedor.entries()) {
+      const subtotal = itensVendedor.reduce(
+        (acc, item) => acc + item.precoUnitario * item.quantidade,
+        0,
+      );
+      subtotaisPorVendedor.set(vendedorId, subtotal);
+    }
 
-    const itensSalvos = await this.customerRepository.findItensPedido(
-      pedido.id,
-    );
+    // Calcular desconto e frete proporcionais
+    const pedidosCriados: PedidoDetalheRes[] = [];
+
+    for (const [vendedorId, itensVendedor] of itensPorVendedor.entries()) {
+      const subtotalVendedor = subtotaisPorVendedor.get(vendedorId) || 0;
+      const proporcao =
+        subtotalTotal > 0 ? subtotalVendedor / subtotalTotal : 0;
+
+      // Distribuir desconto e frete proporcionalmente
+      const descontoVendedor = desconto * proporcao;
+      const freteVendedor = frete * proporcao;
+      const totalVendedor = subtotalVendedor - descontoVendedor + freteVendedor;
+
+      const pedido = await this.customerRepository.createPedido({
+        uuid: randomUUID(),
+        usuario_id: usuarioId,
+        endereco_entrega_id: enderecoEntregaId,
+        cartao_credito_id: cartaoCreditoId || null,
+        status: 'processando',
+        subtotal: subtotalVendedor.toFixed(2),
+        desconto: descontoVendedor.toFixed(2),
+        frete: freteVendedor.toFixed(2),
+        total: totalVendedor.toFixed(2),
+        metodo_pagamento: metodoPagamento,
+        dados_pagamento: null,
+      });
+
+      await this.customerRepository.createItensPedido(
+        itensVendedor.map((i) => ({
+          pedido_id: pedido.id,
+          produto_id: i.produto.id,
+          variacao_id: i.variacaoId,
+          quantidade: i.quantidade,
+          preco_unitario: i.precoUnitario.toFixed(2),
+          nome_produto: i.produto.nome,
+          variacao_descricao: i.variacaoDescricao,
+        })),
+      );
+
+      const itensSalvos = await this.customerRepository.findItensPedido(
+        pedido.id,
+      );
+
+      pedidosCriados.push({
+        ...pedido,
+        itens: itensSalvos,
+      });
+
+      // Notificar vendedor sobre novo pedido
+      this.notificarVendedorNovoPedido(vendedorId, pedido).catch((error) => {
+        console.error('Erro ao enviar notificação de novo pedido:', error);
+      });
+    }
 
     return {
-      ...pedido,
-      itens: itensSalvos,
+      pedidos: pedidosCriados,
     };
+  }
+
+  private async notificarVendedorNovoPedido(
+    vendedorId: string,
+    pedido: PedidosEntity,
+  ) {
+    const vendedor = await this.customerRepository.findVendedorById(vendedorId);
+    if (!vendedor) return;
+
+    const usuarioVendedor = await this.customerRepository.findUsuarioById(
+      vendedor.usuario_id,
+    );
+    if (!usuarioVendedor?.pushToken) return;
+
+    try {
+      await this.notificationsExpoService.sendNotification({
+        to: usuarioVendedor.pushToken,
+        title: 'Novo pedido recebido!',
+        body: `Você recebeu um novo pedido #${pedido.id} no valor de R$ ${pedido.total}`,
+        data: { pedidoId: pedido.id, tipo: 'novo_pedido' },
+      });
+    } catch (error) {
+      console.error('Erro ao notificar vendedor sobre novo pedido:', error);
+    }
   }
 
   async listarPedidos(usuarioId: string, usuarioTipo: string) {

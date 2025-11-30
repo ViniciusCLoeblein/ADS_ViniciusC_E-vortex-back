@@ -26,6 +26,7 @@ import {
   PedidoDetalheRes,
   ListaPedidosRes,
   MessageRes,
+  PedidosCriadosRes,
 } from './types/customer.types';
 import { CriarEnderecoDto } from './dto/criar-endereco.dto';
 import { AtualizarEnderecoDto } from './dto/atualizar-endereco.dto';
@@ -50,6 +51,7 @@ export class CustomerController {
       tipo: user.tipo,
       telefone: user.telefone,
       emailVerificado: user.emailVerificado,
+      pushToken: user.pushToken,
     };
   }
 
@@ -155,13 +157,13 @@ export class CustomerController {
     return this.customerService.marcarComoLida(id, user.id);
   }
 
-  @ApiOperation({ summary: 'Criar pedido' })
-  @ApiOkResponse({ type: PedidoDetalheRes })
+  @ApiOperation({ summary: 'Criar pedido(s) - separado por vendedor' })
+  @ApiOkResponse({ type: PedidosCriadosRes })
   @Post('pedidos')
   criarPedido(
     @Body() body: CriarPedidoDto,
     @UserRequest() user: UsuariosEntity,
-  ): Promise<PedidoDetalheRes> {
+  ): Promise<PedidosCriadosRes> {
     return this.customerService.criarPedido({ ...body, usuarioId: user.id });
   }
 

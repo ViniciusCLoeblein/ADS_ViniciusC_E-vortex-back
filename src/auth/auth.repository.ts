@@ -48,4 +48,8 @@ export class AuthRepository {
   ): Promise<VendedoresEntity> {
     return this.vendedoresRepository.save(vendedor);
   }
+
+  async updateUser(id: string, data: Partial<UsuariosEntity>): Promise<void> {
+    await this.usuariosRepository.update(id, data);
+  }
 }

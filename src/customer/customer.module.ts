@@ -14,6 +14,7 @@ import { UsuariosEntity } from '../entities/usuarios.entity';
 import { ProdutosEntity } from '../entities/produtos.entity';
 import { VariacoesProdutoEntity } from '../entities/variacoes_produto.entity';
 import { VendedoresEntity } from '../entities/vendedores.entity';
+import { NotificationsExpoModule } from '../notifications-expo/notifications-expo.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { VendedoresEntity } from '../entities/vendedores.entity';
       VariacoesProdutoEntity,
       VendedoresEntity,
     ]),
+    NotificationsExpoModule,
   ],
   controllers: [CustomerController],
   providers: [CustomerRepository, CustomerService],

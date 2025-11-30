@@ -18,6 +18,8 @@ import { PedidosEntity } from '../entities/pedidos.entity';
 import { ItensPedidoEntity } from '../entities/itens_pedido.entity';
 import { AvaliacoesEntity } from '../entities/avaliacoes.entity';
 import { UsuariosEntity } from '../entities/usuarios.entity';
+import { CuponsEntity } from '../entities/cupons.entity';
+import { NotificationsExpoModule } from '../notifications-expo/notifications-expo.module';
 
 @Module({
   imports: [
@@ -45,7 +47,9 @@ import { UsuariosEntity } from '../entities/usuarios.entity';
       ItensPedidoEntity,
       AvaliacoesEntity,
       UsuariosEntity,
+      CuponsEntity,
     ]),
+    NotificationsExpoModule,
   ],
   controllers: [SalesController],
   providers: [SalesRepository, SalesService, StorageService],

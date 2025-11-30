@@ -44,6 +44,8 @@ import { CategoriaRes, ListaCategoriasRes } from './types/categoria.types';
 import { VariacaoRes, ListaVariacoesRes } from './types/variacao.types';
 import { ImagemUploadRes, ListaImagensRes } from './types/imagem.types';
 import { CriarImagemDto } from './dto/criar-imagem.dto';
+import { CriarCupomDto } from './dto/criar-cupom.dto';
+import { AtualizarCupomDto } from './dto/atualizar-cupom.dto';
 import { MulterFile } from '../generics/types/multer.types';
 import { ListarVendedoresDto } from './dto/listar-vendedores.dto';
 import { VendedorPublicoRes, ListaVendedoresRes } from './types/vendedor.types';
@@ -433,5 +435,48 @@ export class SalesController {
     @Param('produtoId') produtoId: string,
   ): Promise<ListaAvaliacoesRes> {
     return this.salesService.listarAvaliacoesProduto(produtoId);
+  }
+
+  @ApiOperation({ summary: 'Criar cupom' })
+  @Post('cupons')
+  @HttpCode(201)
+  criarCupom(@Body() body: CriarCupomDto) {
+    return this.salesService.criarCupom(body);
+  }
+
+  @ApiOperation({ summary: 'Listar todos os cupons' })
+  @Get('cupons')
+  listarCupons() {
+    return this.salesService.listarCupons();
+  }
+
+  @ApiOperation({ summary: 'Obter cupom por ID' })
+  @Get('cupons/:id')
+  obterCupom(@Param('id') id: string) {
+    return this.salesService.obterCupom(id);
+  }
+
+  @ApiOperation({ summary: 'Buscar cupom por código' })
+  @Get('cupons/codigo/:codigo')
+  buscarCupomPorCodigo(@Param('codigo') codigo: string) {
+    return this.salesService.buscarCupomPorCodigo(codigo);
+  }
+
+  @ApiOperation({ summary: 'Atualizar cupom' })
+  @Put('cupons/:id')
+  atualizarCupom(@Param('id') id: string, @Body() body: AtualizarCupomDto) {
+    return this.salesService.atualizarCupom(id, body);
+  }
+
+  @ApiOperation({ summary: 'Deletar cupom' })
+  @Delete('cupons/:id')
+  deletarCupom(@Param('id') id: string) {
+    return this.salesService.deletarCupom(id);
+  }
+
+  @ApiOperation({ summary: 'Obter total de vendas do vendedor' })
+  @Get('vendedores/:id/vendas')
+  getTotalVendasVendedor(@Param('id') id: string) {
+    return this.salesService.getTotalVendasVendedor(id);
   }
 }

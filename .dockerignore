@@ -12,6 +12,7 @@ coverage
 .vscode
 .idea
 *.md
+*.key
 .DS_Store
 uploads/*
 !uploads/.gitkeep

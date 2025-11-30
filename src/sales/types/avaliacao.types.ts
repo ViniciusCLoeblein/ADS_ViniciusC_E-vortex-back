@@ -92,4 +92,3 @@ export class ListaAvaliacoesRes {
   @ApiProperty({ description: 'Total de avaliações', example: 10 })
   total: number;
 }
-

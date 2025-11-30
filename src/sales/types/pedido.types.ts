@@ -72,4 +72,3 @@ export class PedidoStatusAtualizadoRes {
   })
   atualizadoEm: Date;
 }
-

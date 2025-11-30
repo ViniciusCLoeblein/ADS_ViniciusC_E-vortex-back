@@ -7,8 +7,8 @@ import { join } from 'path';
 export class PostgresDatabaseService {
   private readonly logger: Logger;
   constructor(
-    private serviceName: string,
-    private configService: ConfigService,
+    private readonly serviceName: string,
+    private readonly configService: ConfigService,
   ) {}
 
   public getConnectionPostgres(): TypeOrmModuleOptions {

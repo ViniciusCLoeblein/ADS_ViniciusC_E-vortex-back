@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { AuthTokenResponse, TestResponse } from './types/auth.types';
 import { UsuariosEntity } from '../entities/usuarios.entity';
 import { VendedoresEntity } from '../entities/vendedores.entity';
@@ -184,6 +185,23 @@ export class AuthService {
       ...token,
       vendedorId: vendedor.id,
       status: vendedor.status,
+    };
+  }
+
+  async forgotPassword(data: ForgotPasswordDto): Promise<{
+    telefone: string;
+    token: string;
+  }> {
+    const user = await this.authRepository.findUserByEmail(data.email);
+    if (!user) {
+      throw new BadRequestException('Email não encontrado');
+    }
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+
+    return {
+      telefone: user.telefone || '',
+      token,
     };
   }
 }

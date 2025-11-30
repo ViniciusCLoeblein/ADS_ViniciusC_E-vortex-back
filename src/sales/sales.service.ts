@@ -1024,18 +1024,16 @@ export class SalesService {
       nota,
       titulo: titulo || null,
       comentario: comentario || null,
-      aprovada: null, // Aguardando aprovação
+      aprovada: null,
     });
 
-    // Calcular nova média de avaliações do produto
     const avaliacoesAprovadas =
       await this.salesRepository.findAvaliacoesByProduto(produtoId);
-    const totalAvaliacoes = avaliacoesAprovadas.length + 1; // +1 porque a nova ainda não está aprovada
+    const totalAvaliacoes = avaliacoesAprovadas.length + 1;
     const somaNotas =
       avaliacoesAprovadas.reduce((acc, av) => acc + av.nota, 0) + nota;
     const novaMedia = (somaNotas / totalAvaliacoes).toFixed(2);
 
-    // Atualizar produto com nova média
     await this.salesRepository.updateProdutoAvaliacao(
       produtoId,
       novaMedia,

@@ -124,26 +124,41 @@ export class SalesRepository {
     take: number;
   }): Promise<[ProdutosEntity[], number]> {
     const { categoriaId, busca, vendedorId, skip, take } = params;
-    const where: FindOptionsWhere<ProdutosEntity> = { ativo: true };
+
+    const queryBuilder = this.produtosRepository
+      .createQueryBuilder('produto')
+      .where('produto.ativo = :ativo', { ativo: true });
 
     if (categoriaId) {
-      where.categoriaId = categoriaId;
+      queryBuilder.andWhere('produto.categoriaId = :categoriaId', {
+        categoriaId,
+      });
     }
 
     if (vendedorId) {
-      where.vendedorId = vendedorId;
+      queryBuilder.andWhere('produto.vendedorId = :vendedorId', {
+        vendedorId,
+      });
     }
 
     if (busca) {
-      where.nome = Like(`%${busca}%`);
+      // Normaliza o termo de busca: remove acentos e converte para minúsculas
+      const buscaNormalizada = busca
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      // Busca que ignora acentos e maiúsculas/minúsculas usando função SQL
+      // TRANSLATE remove acentos e LOWER ignora maiúsculas/minúsculas
+      queryBuilder.andWhere(
+        `LOWER(TRANSLATE(produto.nome, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE LOWER(TRANSLATE(:busca, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`,
+        { busca: `%${buscaNormalizada}%` },
+      );
     }
 
-    return this.produtosRepository.findAndCount({
-      where,
-      skip,
-      take,
-      order: { criadoEm: 'DESC' },
-    });
+    queryBuilder.orderBy('produto.criadoEm', 'DESC').skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
   }
 
   async findVariacaoById(id: string): Promise<VariacoesProdutoEntity | null> {

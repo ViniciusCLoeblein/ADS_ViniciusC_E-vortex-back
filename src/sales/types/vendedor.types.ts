@@ -61,4 +61,3 @@ export class ListaVendedoresRes {
   @ApiProperty({ description: 'Total de páginas', example: 5 })
   totalPaginas: number;
 }
-

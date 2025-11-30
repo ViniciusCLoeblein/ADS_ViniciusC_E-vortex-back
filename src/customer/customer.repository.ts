@@ -14,21 +14,21 @@ import { Repository } from 'typeorm';
 export class CustomerRepository {
   constructor(
     @InjectRepository(EnderecosEntity)
-    private enderecosRepository: Repository<EnderecosEntity>,
+    private readonly enderecosRepository: Repository<EnderecosEntity>,
     @InjectRepository(CartoesCreditoEntity)
-    private cartoesRepository: Repository<CartoesCreditoEntity>,
+    private readonly cartoesRepository: Repository<CartoesCreditoEntity>,
     @InjectRepository(NotificacoesEntity)
-    private notificacoesRepository: Repository<NotificacoesEntity>,
+    private readonly notificacoesRepository: Repository<NotificacoesEntity>,
     @InjectRepository(PedidosEntity)
-    private pedidosRepository: Repository<PedidosEntity>,
+    private readonly pedidosRepository: Repository<PedidosEntity>,
     @InjectRepository(ItensPedidoEntity)
-    private itensPedidoRepository: Repository<ItensPedidoEntity>,
+    private readonly itensPedidoRepository: Repository<ItensPedidoEntity>,
     @InjectRepository(UsuariosEntity)
-    private usuariosRepository: Repository<UsuariosEntity>,
+    private readonly usuariosRepository: Repository<UsuariosEntity>,
     @InjectRepository(ProdutosEntity)
-    private produtosRepository: Repository<ProdutosEntity>,
+    private readonly produtosRepository: Repository<ProdutosEntity>,
     @InjectRepository(VariacoesProdutoEntity)
-    private variacoesRepository: Repository<VariacoesProdutoEntity>,
+    private readonly variacoesRepository: Repository<VariacoesProdutoEntity>,
   ) {}
 
   async createEndereco(

@@ -35,4 +35,3 @@ export class ListarVendedoresDto {
   @Min(1)
   limite?: number;
 }
-

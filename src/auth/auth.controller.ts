@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { Public } from '../generics/decorators/public-decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { RegistrarVendedorDto } from './dto/registrar-vendedor.dto';
 import { VendedorRegistradoRes } from './types/vendedor.types';
 
@@ -49,5 +50,15 @@ export class AuthController {
     accessTokenExpiresAt: string;
   }> {
     return this.authService.login(body);
+  }
+
+  @ApiOperation({ summary: 'Esqueci minha senha' })
+  @Post('forgot-password')
+  @HttpCode(200)
+  forgotPassword(@Body() body: ForgotPasswordDto): Promise<{
+    telefone: string;
+    token: string;
+  }> {
+    return this.authService.forgotPassword(body);
   }
 }

@@ -14,8 +14,14 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-expressions': [
-        'error', 
-        { 'allowShortCircuit': true, 'allowTernary': true }
+        'error',
+        { allowShortCircuit: true, allowTernary: true },
+      ],
+      'prettier/prettier': [
+        'error',
+        {
+          endOfLine: 'lf',
+        },
       ],
     },
     ignores: ['eslint.config.mjs', '/*.js', 'node_modules', 'dist'],

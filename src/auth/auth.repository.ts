@@ -8,9 +8,9 @@ import { Repository } from 'typeorm';
 export class AuthRepository {
   constructor(
     @InjectRepository(UsuariosEntity)
-    private usuariosRepository: Repository<UsuariosEntity>,
+    private readonly usuariosRepository: Repository<UsuariosEntity>,
     @InjectRepository(VendedoresEntity)
-    private vendedoresRepository: Repository<VendedoresEntity>,
+    private readonly vendedoresRepository: Repository<VendedoresEntity>,
   ) {}
 
   async teste(): Promise<{ status: string }> {

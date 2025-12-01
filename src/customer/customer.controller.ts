@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { UserRequest } from '../generics/decorators/user-in-request.decorator';
+import { Public } from '../generics/decorators/public-decorator';
 import { UsuariosEntity } from '../entities/usuarios.entity';
 import {
   EnderecoRes,
@@ -108,6 +109,16 @@ export class CustomerController {
     @UserRequest() user: UsuariosEntity,
   ): Promise<MessageRes> {
     return this.customerService.excluirEndereco(id, user.id);
+  }
+
+  @ApiOperation({ summary: 'Listar endereços do vendedor' })
+  @ApiOkResponse({ type: ListaEnderecosRes })
+  @Public()
+  @Get('enderecos/vendedor/:vendedorId')
+  listarEnderecosVendedor(
+    @Param('vendedorId') vendedorId: string,
+  ): Promise<ListaEnderecosRes> {
+    return this.customerService.listarEnderecosVendedor(vendedorId);
   }
 
   @ApiOperation({ summary: 'Adicionar cartão de crédito' })

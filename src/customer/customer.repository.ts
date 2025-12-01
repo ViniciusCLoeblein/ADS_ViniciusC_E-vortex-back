@@ -139,6 +139,16 @@ export class CustomerRepository {
     return this.vendedoresRepository.findOne({ where: { id } });
   }
 
+  async findEnderecosByVendedorId(
+    vendedorId: string,
+  ): Promise<EnderecosEntity[]> {
+    const vendedor = await this.findVendedorById(vendedorId);
+    if (!vendedor) {
+      return [];
+    }
+    return this.findEnderecosByUsuario(vendedor.usuario_id);
+  }
+
   async findPedidosByVendedor(vendedorId: string): Promise<PedidosEntity[]> {
     return this.pedidosRepository
       .createQueryBuilder('pedido')

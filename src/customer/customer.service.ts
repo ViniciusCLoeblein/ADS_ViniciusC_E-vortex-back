@@ -73,6 +73,15 @@ export class CustomerService {
     };
   }
 
+  async listarEnderecosVendedor(vendedorId: string) {
+    const enderecos =
+      await this.customerRepository.findEnderecosByVendedorId(vendedorId);
+    return {
+      enderecos,
+      total: enderecos.length,
+    };
+  }
+
   async obterEndereco(id: string, usuarioId: string) {
     const endereco = await this.customerRepository.findEnderecoById(id);
     if (!endereco) {
